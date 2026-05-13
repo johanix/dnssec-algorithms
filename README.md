@@ -11,9 +11,10 @@ branch).
 
 ## Available algorithms
 
-| Subpackage | Algorithm | Codepoint | Status |
-|---|---|---|---|
-| `mldsa44/` | ML-DSA-44 (FIPS 204) | 199 (Unassigned) | experimental |
+| Subpackage | Algorithm | Codepoint | Status | Backend |
+|---|---|---|---|---|
+| `mldsa44/` | ML-DSA-44 (FIPS 204) | 199 (Unassigned) | experimental | CIRCL, pure Go |
+| `slhdsa128s/` | SLH-DSA-SHA2-128s (FIPS 205) | 200 (Unassigned) | experimental | CIRCL, pure Go |
 
 ## Usage
 

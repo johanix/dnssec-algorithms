@@ -3,11 +3,12 @@ module github.com/johanix/dnssec-algorithms
 go 1.25.0
 
 require (
-	github.com/cloudflare/circl v1.6.0
+	github.com/cloudflare/circl v1.6.3
 	github.com/miekg/dns v1.1.70
 )
 
 require (
+	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect

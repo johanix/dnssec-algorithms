@@ -1,9 +1,9 @@
 // Demo program for the dnssec-algorithms registration plumbing.
 //
-// Imports an out-of-tree algorithm package (mldsa44) for its side
-// effects, then exercises the registered algorithm through the
-// miekg/dns library's public API: Generate, RRSIG sign+verify, and
-// SIG(0) sign+verify. Prints PASS / FAIL for each step.
+// Imports each out-of-tree algorithm package for its side effects,
+// then exercises every registered algorithm through the miekg/dns
+// public API: Generate, RRSIG sign+verify, and SIG(0) sign+verify.
+// Prints PASS / FAIL per step per algorithm.
 //
 // Build and run:
 //
@@ -23,51 +23,61 @@ import (
 	"github.com/miekg/dns"
 
 	_ "github.com/johanix/dnssec-algorithms/mldsa44"
+	_ "github.com/johanix/dnssec-algorithms/slhdsa128s"
 )
 
-const algNum uint8 = 199
+// algorithms enumerates every algorithm subpackage demoed here.
+// Adding a new algorithm: blank-import it above, append a row here.
+var algorithms = []struct {
+	num  uint8
+	name string
+}{
+	{199, "MLDSA44"},
+	{200, "SLHDSA128S"},
+}
 
 func main() {
-	checks := []struct {
-		name string
-		fn   func() error
-	}{
-		{"registered-maps view", checkRegistered},
-		{"generate + private-key file roundtrip", checkGenerateAndKeyRoundTrip},
-		{"RRSIG sign + verify", checkRRSIG},
-		{"SIG(0) sign + verify", checkSIG0},
-	}
-
 	failed := 0
-	for _, c := range checks {
-		if err := c.fn(); err != nil {
-			fmt.Printf("FAIL  %s: %v\n", c.name, err)
-			failed++
-		} else {
-			fmt.Printf("PASS  %s\n", c.name)
+	for _, alg := range algorithms {
+		fmt.Printf("=== %s (algorithm %d) ===\n", alg.name, alg.num)
+		checks := []struct {
+			name string
+			fn   func(uint8, string) error
+		}{
+			{"registered-maps view", checkRegistered},
+			{"generate + private-key file roundtrip", checkGenerateAndKeyRoundTrip},
+			{"RRSIG sign + verify", checkRRSIG},
+			{"SIG(0) sign + verify", checkSIG0},
 		}
+		for _, c := range checks {
+			if err := c.fn(alg.num, alg.name); err != nil {
+				fmt.Printf("FAIL  %s: %v\n", c.name, err)
+				failed++
+			} else {
+				fmt.Printf("PASS  %s\n", c.name)
+			}
+		}
+		fmt.Println()
 	}
 
 	if failed != 0 {
-		fmt.Printf("\n%d check(s) failed\n", failed)
+		fmt.Printf("%d check(s) failed\n", failed)
 		os.Exit(1)
 	}
-	fmt.Println("\nAll checks passed.")
+	fmt.Println("All checks passed.")
 }
 
-func checkRegistered() error {
-	name := dns.AlgorithmToString[algNum]
-	if name != "MLDSA44" {
-		return fmt.Errorf("AlgorithmToString[%d] = %q, want MLDSA44", algNum, name)
+func checkRegistered(algNum uint8, algName string) error {
+	if name := dns.AlgorithmToString[algNum]; name != algName {
+		return fmt.Errorf("AlgorithmToString[%d] = %q, want %s", algNum, name, algName)
 	}
-	h := dns.AlgorithmToHash[algNum]
-	if h != 0 {
+	if h := dns.AlgorithmToHash[algNum]; h != 0 {
 		return fmt.Errorf("AlgorithmToHash[%d] = %v, want 0 (identity hash)", algNum, h)
 	}
 	return nil
 }
 
-func checkGenerateAndKeyRoundTrip() error {
+func checkGenerateAndKeyRoundTrip(algNum uint8, _ string) error {
 	k := &dns.DNSKEY{
 		Hdr:       dns.RR_Header{Name: "example.", Rrtype: dns.TypeDNSKEY, Class: dns.ClassINET, Ttl: 3600},
 		Flags:     257,
@@ -92,7 +102,7 @@ func checkGenerateAndKeyRoundTrip() error {
 	return nil
 }
 
-func checkRRSIG() error {
+func checkRRSIG(algNum uint8, _ string) error {
 	k := &dns.DNSKEY{
 		Hdr:       dns.RR_Header{Name: "example.", Rrtype: dns.TypeDNSKEY, Class: dns.ClassINET, Ttl: 3600},
 		Flags:     257,
@@ -128,7 +138,7 @@ func checkRRSIG() error {
 	return nil
 }
 
-func checkSIG0() error {
+func checkSIG0(algNum uint8, _ string) error {
 	k := &dns.KEY{DNSKEY: dns.DNSKEY{
 		Hdr:       dns.RR_Header{Name: "example.", Rrtype: dns.TypeKEY, Class: dns.ClassINET, Ttl: 3600},
 		Flags:     257,
@@ -162,4 +172,3 @@ func checkSIG0() error {
 	}
 	return nil
 }
-
