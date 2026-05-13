@@ -1,0 +1,27 @@
+# pkg-config descriptor for NetBSD hosts using the pkgsrc liboqs.
+# Static-links liboqs (pkgsrc ships only liboqs.a, no shared object)
+# but leaves libcrypto as a dynamic dependency on the NetBSD base
+# system. Resulting binaries depend only on /usr/lib/libcrypto.so
+# (which is always present on NetBSD) — no pkg_add liboqs needed on
+# deploy hosts.
+#
+# Usage:
+#   cp liboqs/pkgconfig/liboqs-go.pc.netbsd-pkgsrc liboqs/pkgconfig/liboqs-go.pc
+#   . liboqs/liboqs-env.sh
+#
+# Or call the env helper without copying first — it does the copy
+# automatically based on the detected OS.
+#
+# IMPORTANT: -lcrypto is NOT in the Libs line below. Go 1.25's cgo
+# pkg-config integration filters -lcrypto out of pkg-config Libs
+# output, so we pass it via CGO_LDFLAGS instead (handled by
+# liboqs-env.sh).
+
+LIBOQS_INCLUDE_DIR=/usr/pkg/include
+LIBOQS_LIB_DIR=/usr/pkg/lib
+
+Name: liboqs-go
+Description: Go bindings for liboqs (static-link against NetBSD pkgsrc liboqs.a)
+Version: 0.15.0
+Cflags: -I${LIBOQS_INCLUDE_DIR}
+Libs: -L${LIBOQS_LIB_DIR} -loqs

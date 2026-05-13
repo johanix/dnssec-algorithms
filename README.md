@@ -60,60 +60,65 @@ PKG_CONFIG_PATH=$(pwd)/liboqs/pkgconfig:$PKG_CONFIG_PATH go run ./cmd/demo
 
 `falcon512`, `mayo1`, and `snova24_5_4` use CGO via `liboqs-go`. CGO
 requires `pkg-config` to locate a `liboqs-go.pc` file that points at
-the liboqs install. The repo's `liboqs/pkgconfig/` directory ships
-templates for the two common cases.
+the liboqs install.
+
+**The easy path** — one command per shell session, works on macOS
+and NetBSD:
+
+```
+. liboqs/liboqs-env.sh
+```
+
+The script detects the OS, copies the matching template from
+`liboqs/pkgconfig/`, exports `PKG_CONFIG_PATH`, and on NetBSD also
+sets `CGO_LDFLAGS=-lcrypto` (a workaround for Go 1.25's cgo
+pkg-config integration filtering `-lcrypto` out of `.pc` Libs lines).
+After sourcing, `make` in `cmdv2/` Just Works.
+
+If you prefer to `eval` rather than source:
+
+```
+eval "$(liboqs/liboqs-env.sh)"
+```
 
 ### macOS development host (MacPorts)
 
-For a dev workstation that compiles and tests against the
-dynamically-linked liboqs from `port install liboqs`:
-
-```
-cp liboqs/pkgconfig/liboqs-go.pc.macos-dev liboqs/pkgconfig/liboqs-go.pc
-# Edit if MacPorts is not at /opt/local (e.g. Homebrew on Apple
-# Silicon uses /opt/homebrew).
-
-export PKG_CONFIG_PATH=$(pwd)/liboqs/pkgconfig:$PKG_CONFIG_PATH
-```
+Install liboqs from MacPorts (`port install liboqs`) — provides
+`/opt/local/lib/liboqs.dylib`. The env script picks up
+`liboqs-go.pc.macos-dev`, exports `PKG_CONFIG_PATH`, no `CGO_LDFLAGS`
+needed.
 
 Binaries built this way depend on `liboqs.dylib` + `libcrypto.3.dylib`
 at runtime. Fine for local testing; not for distribution.
 
-### NetBSD / Linux production build
+### NetBSD with pkgsrc liboqs
 
-Builds the binaries that ship. Static-link liboqs into the Go binary
-so deployed hosts need only libc — no liboqs install required at the
-deploy target.
+Install liboqs from pkgsrc (`pkgin install liboqs`) — provides
+`/usr/pkg/lib/liboqs.a`. The env script picks up
+`liboqs-go.pc.netbsd-pkgsrc`, exports `PKG_CONFIG_PATH`, and sets
+`CGO_LDFLAGS=-lcrypto`.
 
-One-time per build host:
+pkgsrc ships **only** the static archive (no `.so`), so liboqs ends
+up statically linked into the resulting Go binaries. The binaries
+depend on `libcrypto.so` from the NetBSD base system (always
+present); no `pkg_add liboqs` needed on deploy hosts.
 
-```
-sh liboqs/build-liboqs-static.sh
-# Default prefix /usr/local/liboqs-static; pass a different one if
-# you want it elsewhere.
-```
+### Linux
 
-The script:
-- Clones liboqs v0.15.0
-- Configures with `OQS_USE_OPENSSL=OFF` (use liboqs's internal
-  SHA/AES) and `OQS_MINIMAL_BUILD=falcon_512;mayo_1;snova_SNOVA_24_5_4`
-  (compile only the three algorithms we use)
-- Produces a static `liboqs.a` (no shared library)
-- Installs to the prefix
-- Drops a matching `liboqs-go.pc` that emits explicit static-link
-  flags
+Template not yet shipped (coming).
 
-Then for the build session:
+### NetBSD / Linux: full-static, no-OpenSSL alternative
 
-```
-export PKG_CONFIG_PATH=/usr/local/liboqs-static/lib/pkgconfig:$PKG_CONFIG_PATH
-cd ../tdns/cmdv2 && make
-```
+If you need the binaries to be **completely** self-contained
+(no libcrypto dep either), run `liboqs/build-liboqs-static.sh` once
+per build host. It builds a custom liboqs with `OQS_USE_OPENSSL=OFF`
+(uses liboqs's internal SHA/AES) and only the three algorithms we
+use, installed under a chosen prefix. Useful when the deploy targets
+don't have a libcrypto compatible with the build host's libcrypto.
 
-Resulting binaries:
-- Contain liboqs (the trimmed-down version) statically linked
-- Depend only on libc / libpthread at runtime
-- Are ~5 MB larger than pure-Go-algorithm-only binaries
+For the standard NetBSD case (deploying to a NetBSD host with the
+same major OS version), the pkgsrc + env-script flow above is
+simpler and sufficient.
 
 ## Codepoint disclaimer
 
