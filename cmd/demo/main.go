@@ -22,8 +22,11 @@ import (
 
 	"github.com/miekg/dns"
 
+	_ "github.com/johanix/dnssec-algorithms/falcon512"
+	_ "github.com/johanix/dnssec-algorithms/mayo1"
 	_ "github.com/johanix/dnssec-algorithms/mldsa44"
 	_ "github.com/johanix/dnssec-algorithms/slhdsa128s"
+	_ "github.com/johanix/dnssec-algorithms/snova24_5_4"
 )
 
 // algorithms enumerates every algorithm subpackage demoed here.
@@ -34,6 +37,9 @@ var algorithms = []struct {
 }{
 	{199, "MLDSA44"},
 	{200, "SLHDSA128S"},
+	{201, "FALCON512"},
+	{202, "MAYO1"},
+	{203, "SNOVA24_5_4"},
 }
 
 func main() {

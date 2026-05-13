@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/cloudflare/circl v1.6.3
 	github.com/miekg/dns v1.1.70
+	github.com/open-quantum-safe/liboqs-go v0.0.0-20260310140033-75451133b94a
 )
 
 require (

@@ -1,0 +1,21 @@
+# pkg-config descriptor for development builds on macOS / MacPorts.
+# Dynamic-links against the system liboqs (the one installed via
+# `port install liboqs`). Suitable for local builds and tests; not for
+# production binaries because the resulting executable depends on
+# liboqs.dylib + libcrypto.3.dylib at runtime.
+#
+# Usage:
+#   export PKG_CONFIG_PATH=$(pwd)/liboqs/pkgconfig:$PKG_CONFIG_PATH
+#   cp liboqs/pkgconfig/liboqs-go.pc.macos-dev liboqs/pkgconfig/liboqs-go.pc
+#
+# Adjust the two _DIR variables if MacPorts is installed elsewhere
+# (default is /opt/local; Homebrew on Apple Silicon uses /opt/homebrew).
+
+LIBOQS_INCLUDE_DIR=/opt/local/include
+LIBOQS_LIB_DIR=/opt/local/lib
+
+Name: liboqs-go
+Description: Go bindings for liboqs (dynamic-link for macOS dev)
+Version: 0.14.0
+Cflags: -I${LIBOQS_INCLUDE_DIR}
+Libs: -L${LIBOQS_LIB_DIR} -loqs
