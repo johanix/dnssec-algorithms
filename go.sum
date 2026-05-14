@@ -2,8 +2,8 @@ github.com/cloudflare/circl v1.6.3 h1:9GPOhQGF9MCYUeXyMYlqTR6a5gTrgR/fBLXvUgtVcg
 github.com/cloudflare/circl v1.6.3/go.mod h1:2eXP6Qfat4O/Yhh8BznvKnJ+uzEoTQ6jVKJRn81BiS4=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/johanix/dns v0.0.0-20260513105419-747cbcbc3ac8 h1:I0QJoE0t+gehaGiqLyR31tnKPN7nuLOl3aDbpAGqxfg=
-github.com/johanix/dns v0.0.0-20260513105419-747cbcbc3ac8/go.mod h1:hBcNfObhP6OL8tg/LRRiRxqToCk64JmTahUFw2q39GM=
+github.com/johanix/dns v0.0.0-20260514084135-a4e41a4bc6e2 h1:ARJmb9Z49brTymCmaGcl7mA4GHDF3tHHuMLkgMheF/g=
+github.com/johanix/dns v0.0.0-20260514084135-a4e41a4bc6e2/go.mod h1:hBcNfObhP6OL8tg/LRRiRxqToCk64JmTahUFw2q39GM=
 github.com/open-quantum-safe/liboqs-go v0.0.0-20260310140033-75451133b94a h1:ODvqx48snl7BdkeVq+iStisJJlDr5Sfzns8YupfhDTg=
 github.com/open-quantum-safe/liboqs-go v0.0.0-20260310140033-75451133b94a/go.mod h1:OoIQ+v4rM6S6cF9zLGxsnsXX9vwv7WLp9s0TV2FbD6M=
 golang.org/x/crypto v0.49.0 h1:+Ng2ULVvLHnJ/ZFEq4KdcDd/cfjrrjjNSXNzxg0Y4U4=
