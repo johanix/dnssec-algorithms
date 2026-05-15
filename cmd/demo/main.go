@@ -22,24 +22,35 @@ import (
 
 	"github.com/miekg/dns"
 
-	_ "github.com/johanix/dnssec-algorithms/falcon512"
-	_ "github.com/johanix/dnssec-algorithms/mayo1"
-	_ "github.com/johanix/dnssec-algorithms/mldsa44"
-	_ "github.com/johanix/dnssec-algorithms/slhdsa128s"
-	_ "github.com/johanix/dnssec-algorithms/snova24_5_4"
+	"github.com/johanix/dnssec-algorithms/falcon512"
+	"github.com/johanix/dnssec-algorithms/mayo1"
+	"github.com/johanix/dnssec-algorithms/mldsa44"
+	"github.com/johanix/dnssec-algorithms/slhdsa128s"
+	"github.com/johanix/dnssec-algorithms/snova24_5_4"
 )
 
-// algorithms enumerates every algorithm subpackage demoed here.
-// Adding a new algorithm: blank-import it above, append a row here.
+// algorithms enumerates every algorithm subpackage demoed here. The
+// codepoints are chosen by this demo, not by the subpackages — adapt
+// to a different number scheme by editing this table.
 var algorithms = []struct {
 	num  uint8
 	name string
+	impl dns.Algorithm
 }{
-	{199, "MLDSA44"},
-	{200, "SLHDSA128S"},
-	{201, "FALCON512"},
-	{202, "MAYO1"},
-	{203, "SNOVA24_5_4"},
+	{199, "MLDSA44", mldsa44.New()},
+	{200, "SLHDSA128S", slhdsa128s.New()},
+	{201, "FALCON512", falcon512.New()},
+	{202, "MAYO1", mayo1.New()},
+	{203, "SNOVA24_5_4", snova24_5_4.New()},
+}
+
+func init() {
+	for _, alg := range algorithms {
+		if err := dns.RegisterAlgorithm(alg.num, alg.impl); err != nil {
+			panic(fmt.Sprintf("dns.RegisterAlgorithm(%d, %s): %v",
+				alg.num, alg.name, err))
+		}
+	}
 }
 
 func main() {

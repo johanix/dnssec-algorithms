@@ -37,29 +37,27 @@ import (
 	"github.com/johanix/dnssec-algorithms/liboqs"
 )
 
-const Number uint8 = 202
+// AlgName is the liboqs identifier for MAYO-1.
 const AlgName = "MAYO-1"
 
-type impl struct{}
+// Impl is the MAYO-1 [dns.Algorithm] implementation. Construct with
+// [New]; pass the returned value to [dns.RegisterAlgorithm].
+type Impl struct{}
 
-func init() {
-	if err := dns.RegisterAlgorithm(&impl{}); err != nil {
-		panic(fmt.Sprintf("dnssec-algorithms/mayo1: registration failed: %v", err))
-	}
-}
+// New returns a [dns.Algorithm] implementation for MAYO-1.
+func New() *Impl { return &Impl{} }
 
-func (impl) Number() uint8     { return Number }
-func (impl) Name() string      { return "MAYO1" }
-func (impl) Hash() crypto.Hash { return 0 }
+func (*Impl) Name() string      { return "MAYO1" }
+func (*Impl) Hash() crypto.Hash { return 0 }
 
-func (impl) Generate(bits int) (crypto.PrivateKey, error) {
+func (*Impl) Generate(bits int) (crypto.PrivateKey, error) {
 	if bits != 0 {
 		return nil, dns.ErrKeySize
 	}
 	return liboqs.Generate(AlgName)
 }
 
-func (impl) PublicKeyFromWire(buf []byte) (crypto.PublicKey, error) {
+func (*Impl) PublicKeyFromWire(buf []byte) (crypto.PublicKey, error) {
 	want, err := liboqs.PublicKeySize(AlgName)
 	if err != nil {
 		return nil, err
@@ -72,7 +70,7 @@ func (impl) PublicKeyFromWire(buf []byte) (crypto.PublicKey, error) {
 	return out, nil
 }
 
-func (impl) PublicKeyToWire(pub crypto.PublicKey) ([]byte, error) {
+func (*Impl) PublicKeyToWire(pub crypto.PublicKey) ([]byte, error) {
 	p, ok := pub.([]byte)
 	if !ok {
 		return nil, dns.ErrKey
@@ -80,7 +78,7 @@ func (impl) PublicKeyToWire(pub crypto.PublicKey) ([]byte, error) {
 	return p, nil
 }
 
-func (impl) ReadPrivateKey(m map[string]string) (crypto.PrivateKey, error) {
+func (*Impl) ReadPrivateKey(m map[string]string) (crypto.PrivateKey, error) {
 	v, ok := m["privatekey"]
 	if !ok {
 		return nil, dns.ErrPrivKey
@@ -92,7 +90,7 @@ func (impl) ReadPrivateKey(m map[string]string) (crypto.PrivateKey, error) {
 	return liboqs.UnmarshalBinary(AlgName, buf)
 }
 
-func (impl) PrivateKeyToString(priv crypto.PrivateKey) (string, error) {
+func (*Impl) PrivateKeyToString(priv crypto.PrivateKey) (string, error) {
 	s, ok := priv.(*liboqs.Signer)
 	if !ok {
 		return "", dns.ErrPrivKey
@@ -107,7 +105,7 @@ func (impl) PrivateKeyToString(priv crypto.PrivateKey) (string, error) {
 	return "PrivateKey: " + base64.StdEncoding.EncodeToString(buf) + "\n", nil
 }
 
-func (impl) Verify(pub crypto.PublicKey, hashed, sig []byte) error {
+func (*Impl) Verify(pub crypto.PublicKey, hashed, sig []byte) error {
 	pkBytes, ok := pub.([]byte)
 	if !ok {
 		return dns.ErrKey
@@ -121,6 +119,6 @@ func (impl) Verify(pub crypto.PublicKey, hashed, sig []byte) error {
 	return nil
 }
 
-func (impl) SignaturePostProcess(sig []byte) ([]byte, error) {
+func (*Impl) SignaturePostProcess(sig []byte) ([]byte, error) {
 	return sig, nil
 }

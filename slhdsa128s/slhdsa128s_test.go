@@ -11,6 +11,17 @@ import (
 	"github.com/miekg/dns"
 )
 
+// Number is the codepoint the tests use. Out-of-tree consumers pick
+// their own; we just need a consistent value across the test file.
+const Number uint8 = 200
+
+// Register the algorithm at test-binary init time.
+func init() {
+	if err := dns.RegisterAlgorithm(Number, New()); err != nil {
+		panic("slhdsa128s test init: RegisterAlgorithm: " + err.Error())
+	}
+}
+
 func TestRegistered(t *testing.T) {
 	if name := dns.AlgorithmToString[Number]; name != "SLHDSA128S" {
 		t.Errorf("AlgorithmToString[%d] = %q, want SLHDSA128S", Number, name)

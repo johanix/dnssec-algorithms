@@ -12,6 +12,17 @@ import (
 	"github.com/johanix/dnssec-algorithms/liboqs"
 )
 
+// Number is the codepoint the tests use. Out-of-tree consumers pick
+// their own; we just need a consistent value across the test file.
+const Number uint8 = 203
+
+// Register the algorithm at test-binary init time.
+func init() {
+	if err := dns.RegisterAlgorithm(Number, New()); err != nil {
+		panic("snova24_5_4 test init: RegisterAlgorithm: " + err.Error())
+	}
+}
+
 func TestRegistered(t *testing.T) {
 	if name := dns.AlgorithmToString[Number]; name != "SNOVA24_5_4" {
 		t.Errorf("AlgorithmToString[%d] = %q, want SNOVA24_5_4", Number, name)

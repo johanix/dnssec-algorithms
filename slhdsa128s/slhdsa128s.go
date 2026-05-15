@@ -1,11 +1,13 @@
 // Package slhdsa128s provides a [dns.Algorithm] implementation of
 // SLH-DSA-SHA2-128s (FIPS 205) for DNSSEC SIG(0) transaction signing.
 //
-// Algorithm number 200 is used. IANA has not assigned a codepoint for
-// SLH-DSA in the DNS Security Algorithm Numbers registry; 200 is
-// chosen from the Unassigned range as the codepoint right next to
-// MLDSA44 at 199. Collision risk is on the user; pin the codepoint
-// in deployment configuration.
+// The codepoint is chosen by the application at registration time:
+//
+//	dns.RegisterAlgorithm(200, slhdsa128s.New())
+//
+// IANA has not assigned a codepoint for SLH-DSA in the DNS Security
+// Algorithm Numbers registry; 200 is commonly chosen from the
+// Unassigned range, but the application is free to pick another.
 //
 // SLH-DSA-SHA2-128s is the small-signature, slow-signing variant at
 // NIST security level 1. Signatures are 7856 bytes. RRSIG zone
@@ -13,11 +15,6 @@
 // use case for SLH-DSA in DNSSEC is SIG(0) transaction signing where
 // TCP is mandatory and the conservative hash-based security model is
 // attractive.
-//
-// Importing this package for its side effects registers the algorithm
-// with [github.com/miekg/dns]:
-//
-//	import _ "github.com/johanix/dnssec-algorithms/slhdsa128s"
 //
 // The CIRCL backend ([github.com/cloudflare/circl/sign/slhdsa]) is
 // pure Go — no cgo, no external C library required.
@@ -34,16 +31,10 @@ import (
 	"crypto"
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 
 	"github.com/cloudflare/circl/sign/slhdsa"
 	"github.com/miekg/dns"
 )
-
-// Number is the algorithm codepoint claimed by this implementation.
-// Pinned at IANA-Unassigned 200 until an IANA-assigned number exists
-// for SLH-DSA in the DNS Security Algorithm Numbers registry.
-const Number uint8 = 200
 
 // ParamSet is the CIRCL SLH-DSA parameter set used by this package.
 // SHA2_128s = SLH-DSA-SHA2-128s per FIPS 205.
@@ -53,19 +44,18 @@ const ParamSet = slhdsa.SHA2_128s
 // crypto.Signer, so the shared sign() path in miekg/dns can use it.
 var _ crypto.Signer = (*slhdsa.PrivateKey)(nil)
 
-type impl struct{}
+// Impl is the SLH-DSA-SHA2-128s [dns.Algorithm] implementation.
+// Construct with [New]; pass the returned value to
+// [dns.RegisterAlgorithm].
+type Impl struct{}
 
-func init() {
-	if err := dns.RegisterAlgorithm(&impl{}); err != nil {
-		panic(fmt.Sprintf("dnssec-algorithms/slhdsa128s: registration failed: %v", err))
-	}
-}
+// New returns a [dns.Algorithm] implementation for SLH-DSA-SHA2-128s.
+func New() *Impl { return &Impl{} }
 
-func (impl) Number() uint8     { return Number }
-func (impl) Name() string      { return "SLHDSA128S" }
-func (impl) Hash() crypto.Hash { return 0 }
+func (*Impl) Name() string      { return "SLHDSA128S" }
+func (*Impl) Hash() crypto.Hash { return 0 }
 
-func (impl) Generate(bits int) (crypto.PrivateKey, error) {
+func (*Impl) Generate(bits int) (crypto.PrivateKey, error) {
 	if bits != 0 {
 		return nil, dns.ErrKeySize
 	}
@@ -76,7 +66,7 @@ func (impl) Generate(bits int) (crypto.PrivateKey, error) {
 	return &priv, nil
 }
 
-func (impl) PublicKeyFromWire(buf []byte) (crypto.PublicKey, error) {
+func (*Impl) PublicKeyFromWire(buf []byte) (crypto.PublicKey, error) {
 	pk := &slhdsa.PublicKey{ID: ParamSet}
 	if err := pk.UnmarshalBinary(buf); err != nil {
 		return nil, err
@@ -84,7 +74,7 @@ func (impl) PublicKeyFromWire(buf []byte) (crypto.PublicKey, error) {
 	return pk, nil
 }
 
-func (impl) PublicKeyToWire(pub crypto.PublicKey) ([]byte, error) {
+func (*Impl) PublicKeyToWire(pub crypto.PublicKey) ([]byte, error) {
 	// CIRCL's slhdsa.PrivateKey.Public() returns a slhdsa.PublicKey
 	// by value, but other call paths produce a pointer. Accept both.
 	switch p := pub.(type) {
@@ -97,7 +87,7 @@ func (impl) PublicKeyToWire(pub crypto.PublicKey) ([]byte, error) {
 	}
 }
 
-func (impl) ReadPrivateKey(m map[string]string) (crypto.PrivateKey, error) {
+func (*Impl) ReadPrivateKey(m map[string]string) (crypto.PrivateKey, error) {
 	v, ok := m["privatekey"]
 	if !ok {
 		return nil, dns.ErrPrivKey
@@ -113,7 +103,7 @@ func (impl) ReadPrivateKey(m map[string]string) (crypto.PrivateKey, error) {
 	return p, nil
 }
 
-func (impl) PrivateKeyToString(priv crypto.PrivateKey) (string, error) {
+func (*Impl) PrivateKeyToString(priv crypto.PrivateKey) (string, error) {
 	p, ok := priv.(*slhdsa.PrivateKey)
 	if !ok {
 		return "", dns.ErrPrivKey
@@ -125,7 +115,7 @@ func (impl) PrivateKeyToString(priv crypto.PrivateKey) (string, error) {
 	return "PrivateKey: " + base64.StdEncoding.EncodeToString(buf) + "\n", nil
 }
 
-func (impl) Verify(pub crypto.PublicKey, hashed, sig []byte) error {
+func (*Impl) Verify(pub crypto.PublicKey, hashed, sig []byte) error {
 	var p *slhdsa.PublicKey
 	switch v := pub.(type) {
 	case *slhdsa.PublicKey:
@@ -141,6 +131,6 @@ func (impl) Verify(pub crypto.PublicKey, hashed, sig []byte) error {
 	return dns.ErrSig
 }
 
-func (impl) SignaturePostProcess(sig []byte) ([]byte, error) {
+func (*Impl) SignaturePostProcess(sig []byte) ([]byte, error) {
 	return sig, nil
 }
