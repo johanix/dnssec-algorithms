@@ -2,9 +2,12 @@
 # liboqs-env.sh — set up CGO build environment for dnssec-algorithms
 # and the tdns binaries that depend on it.
 #
-# Detects the OS, copies the matching pkg-config template into place
-# (if liboqs-go.pc is missing), and prints export statements for the
-# environment variables Go's cgo needs to find liboqs at build time.
+# Auto-detects an installed liboqs at well-known prefixes
+# (MacPorts /opt/local, Homebrew /opt/homebrew or /usr/local,
+# pkgsrc /usr/pkg, Linux /usr or /usr/local), writes a fresh
+# liboqs-go.pc from the discovered paths, and prints export
+# statements for the environment variables Go's cgo needs to find
+# liboqs at build time.
 #
 # Usage:
 #   . liboqs/liboqs-env.sh              # source: sets vars in current shell
@@ -13,10 +16,10 @@
 #
 # After sourcing, you can `make` the tdns binaries in cmdv2/ as usual.
 #
-# Supports:
-#   - NetBSD with pkgsrc liboqs       (/usr/pkg/{include,lib})
-#   - macOS with MacPorts liboqs      (/opt/local/{include,lib})
-#   - Linux (Debian/Ubuntu)           coming tomorrow
+# Override detection with environment variables:
+#   LIBOQS_PREFIX=/path/to/prefix       # forces a specific install root
+#   LIBOQS_INCLUDE_DIR=/.../include     # explicit include dir
+#   LIBOQS_LIB_DIR=/.../lib             # explicit lib dir
 #
 # Idempotent — safe to source multiple times.
 
@@ -30,23 +33,32 @@ fi
 __libqs_env_pkgconfig="${__libqs_env_self}/pkgconfig"
 __libqs_env_pc="${__libqs_env_pkgconfig}/liboqs-go.pc"
 
-# Pick a template based on the OS.
+# OS-specific defaults: a newline-separated list of candidate prefixes
+# (newline is the only separator that doesn't get re-joined by zsh's
+# no-split-on-spaces default), and any CGO_LDFLAGS workaround.
 __libqs_env_uname=$(uname -s 2>/dev/null || echo unknown)
 case "$__libqs_env_uname" in
    NetBSD)
-      __libqs_env_template="${__libqs_env_pkgconfig}/liboqs-go.pc.netbsd-pkgsrc"
+      __libqs_env_search='/usr/pkg
+/usr/local'
       __libqs_env_cgo_ldflags="-lcrypto"
+      __libqs_env_os_note="NetBSD pkgsrc (static-link liboqs.a, dynamic libcrypto)"
       ;;
    Darwin)
-      __libqs_env_template="${__libqs_env_pkgconfig}/liboqs-go.pc.macos-dev"
-      # macOS MacPorts liboqs.dylib already pulls in libcrypto.3.dylib
-      # via NEEDED entries; we don't need to mention it.
+      # MacPorts (Intel + Apple Silicon) then Homebrew (Apple Silicon,
+      # then Intel) then a manual /usr/local install.
+      __libqs_env_search='/opt/local
+/opt/homebrew
+/usr/local'
       __libqs_env_cgo_ldflags=""
+      __libqs_env_os_note="macOS dev (dynamic-link liboqs.dylib + libcrypto.dylib)"
       ;;
    Linux)
-      echo "# liboqs-env.sh: Linux template not yet shipped — please" >&2
-      echo "# write a liboqs-go.pc by hand for now." >&2
-      return 1 2>/dev/null || exit 1
+      __libqs_env_search='/usr
+/usr/local
+/opt/liboqs'
+      __libqs_env_cgo_ldflags=""
+      __libqs_env_os_note="Linux (dynamic-link liboqs.so)"
       ;;
    *)
       echo "# liboqs-env.sh: unsupported OS '$__libqs_env_uname'" >&2
@@ -54,15 +66,73 @@ case "$__libqs_env_uname" in
       ;;
 esac
 
-# Install the template if liboqs-go.pc is missing.
-if [ ! -f "$__libqs_env_pc" ]; then
-   if [ ! -f "$__libqs_env_template" ]; then
-      echo "# liboqs-env.sh: template not found: $__libqs_env_template" >&2
+# Probe for liboqs in a prefix: return 0 if include/oqs/oqs.h and
+# lib/liboqs.{a,so,dylib} both exist.
+__libqs_env_probe() {
+   __p=$1
+   [ -f "$__p/include/oqs/oqs.h" ] || return 1
+   [ -f "$__p/lib/liboqs.a" ] || \
+   [ -f "$__p/lib/liboqs.so" ] || \
+   [ -f "$__p/lib/liboqs.dylib" ] || return 1
+   return 0
+}
+
+# Allow caller to override discovery entirely.
+if [ -n "$LIBOQS_INCLUDE_DIR" ] && [ -n "$LIBOQS_LIB_DIR" ]; then
+   __libqs_env_inc="$LIBOQS_INCLUDE_DIR"
+   __libqs_env_lib="$LIBOQS_LIB_DIR"
+   __libqs_env_chosen="explicit (LIBOQS_{INCLUDE,LIB}_DIR)"
+elif [ -n "$LIBOQS_PREFIX" ]; then
+   if __libqs_env_probe "$LIBOQS_PREFIX"; then
+      __libqs_env_inc="$LIBOQS_PREFIX/include"
+      __libqs_env_lib="$LIBOQS_PREFIX/lib"
+      __libqs_env_chosen="$LIBOQS_PREFIX (LIBOQS_PREFIX)"
+   else
+      echo "# liboqs-env.sh: LIBOQS_PREFIX=$LIBOQS_PREFIX does not look like a liboqs install (missing include/oqs/oqs.h or lib/liboqs.{a,so,dylib})" >&2
       return 1 2>/dev/null || exit 1
    fi
-   cp "$__libqs_env_template" "$__libqs_env_pc"
-   echo "# liboqs-env.sh: installed $__libqs_env_pc from $(basename "$__libqs_env_template")" >&2
+else
+   # Probe the per-OS candidate list. Reads a newline-separated list —
+   # avoids zsh/bash/sh disagreement over splitting unquoted strings on
+   # whitespace.
+   while IFS= read -r __p; do
+      [ -z "$__p" ] && continue
+      if __libqs_env_probe "$__p"; then
+         __libqs_env_inc="$__p/include"
+         __libqs_env_lib="$__p/lib"
+         __libqs_env_chosen="$__p (auto-detected)"
+         break
+      fi
+   done <<EOF
+$__libqs_env_search
+EOF
 fi
+
+if [ -z "$__libqs_env_inc" ]; then
+   echo "# liboqs-env.sh: liboqs not found in any of: $__libqs_env_search" >&2
+   echo "# Install liboqs for your platform ($__libqs_env_os_note)," >&2
+   echo "# or set LIBOQS_PREFIX=/your/path." >&2
+   echo "# See dnssec-algorithms/README.md for per-platform notes." >&2
+   return 1 2>/dev/null || exit 1
+fi
+
+# Write a fresh pkg-config file with the discovered paths. Always
+# rewrite — cheap, and avoids stale paths from a previous detection.
+mkdir -p "$__libqs_env_pkgconfig"
+cat > "$__libqs_env_pc" <<EOF
+# Auto-generated by liboqs-env.sh — do not edit.
+# Source: $__libqs_env_chosen
+# Platform: $__libqs_env_os_note
+LIBOQS_INCLUDE_DIR=$__libqs_env_inc
+LIBOQS_LIB_DIR=$__libqs_env_lib
+
+Name: liboqs-go
+Description: Go bindings for liboqs (auto-detected install)
+Version: 0
+Cflags: -I\${LIBOQS_INCLUDE_DIR}
+Libs: -L\${LIBOQS_LIB_DIR} -loqs
+EOF
+echo "# liboqs-env.sh: detected liboqs at $__libqs_env_chosen" >&2
 
 # Compose the env exports. Print them so the caller can `eval` if
 # they didn't source, and also set them in this shell so sourcing
@@ -85,5 +155,7 @@ fi
 
 # Clean up local vars (when sourced).
 unset __libqs_env_self __libqs_env_pkgconfig __libqs_env_pc \
-   __libqs_env_uname __libqs_env_template __libqs_env_cgo_ldflags \
-   __libqs_env_pkg_path
+   __libqs_env_uname __libqs_env_search __libqs_env_cgo_ldflags \
+   __libqs_env_os_note __libqs_env_inc __libqs_env_lib \
+   __libqs_env_chosen __libqs_env_pkg_path __p
+unset -f __libqs_env_probe 2>/dev/null
