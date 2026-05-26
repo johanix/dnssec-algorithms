@@ -27,6 +27,7 @@ import (
 	"github.com/johanix/dnssec-algorithms/mldsa44"
 	"github.com/johanix/dnssec-algorithms/slhdsa128s"
 	"github.com/johanix/dnssec-algorithms/snova24_5_4"
+	"github.com/johanix/dnssec-algorithms/sqisign1"
 )
 
 // algorithms enumerates every algorithm subpackage demoed here. The
@@ -42,6 +43,7 @@ var algorithms = []struct {
 	{201, "FALCON512", falcon512.New()},
 	{202, "MAYO1", mayo1.New()},
 	{203, "SNOVA24_5_4", snova24_5_4.New()},
+	{204, "SQISIGN1", sqisign1.New()},
 }
 
 func init() {

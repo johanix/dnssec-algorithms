@@ -11,18 +11,42 @@ branch).
 
 ## Available algorithms
 
-| Subpackage | Algorithm | Codepoint | Standardization | Backend | Build dep |
+| Subpackage | Algorithm | Demo codepoint | Standardization | Backend | Build dep |
 |---|---|---|---|---|---|
 | `mldsa44/` | ML-DSA-44 (FIPS 204) | 199 (Unassigned) | final | CIRCL, pure Go | none |
 | `slhdsa128s/` | SLH-DSA-SHA2-128s (FIPS 205) | 200 (Unassigned) | final | CIRCL, pure Go | none |
 | `falcon512/` | Falcon-512 (FIPS 206 draft) | 201 (Unassigned) | draft | liboqs-go | liboqs |
 | `mayo1/` | MAYO-1 (NIST onramp) | 202 (Unassigned) | candidate | liboqs-go | liboqs |
 | `snova24_5_4/` | SNOVA-24_5_4 (NIST onramp) | 203 (Unassigned) | candidate | liboqs-go | liboqs |
+| `sqisign1/` | SQIsign-I (NIST onramp) | 204 (Unassigned) | candidate | the-sqisign reference C | the-sqisign, libgmp |
 
-The first two use `github.com/cloudflare/circl` directly — pure Go,
-no system dependencies. The latter three use the Open Quantum Safe
-`liboqs-go` Go bindings on top of the C `liboqs` library and require
-the build host to have liboqs available (see "Build setup" below).
+The "Demo codepoint" column shows the number used by this repo's
+demo program and tests only. The subpackages themselves do not
+own a codepoint — the caller picks one and binds it at registration
+time via `dns.RegisterAlgorithm(N, alg.New())` (or, in downstream
+applications like tdns, via the equivalent per-app registry call).
+Different consumers are free to use different numbers for the same
+algorithm; the values listed above are simply this repo's
+demo/testing convention.
+
+The first two algorithms use `github.com/cloudflare/circl` directly
+— pure Go, no system dependencies. The next three use the Open
+Quantum Safe `liboqs-go` Go bindings on top of the C `liboqs`
+library and require the build host to have liboqs available (see
+"Build setup" below). The last one (`sqisign1/`) uses the SQIsign
+team's own reference C implementation via a thin in-repo CGO
+adapter under `sqisignc/`; liboqs does not ship SQIsign. See
+"SQIsign build setup" below.
+
+**SQIsign-I sizes** (operationally the most interesting feature):
+public key 65 bytes, secret key 353 bytes, **signature 148 bytes** —
+smaller than every other DNSSEC signature algorithm currently in
+use. Round 2 reference signing on Apple Silicon is ~50 ms per
+signature in our tests, fast enough for online dynamic signing.
+Verification is comparable. Round 1's "seconds per signature"
+reputation no longer applies. Server-side performance on other
+platforms (x86, ARM cores without crypto extensions) should be
+benchmarked before committing to online-signing workflows.
 
 ## Usage
 
@@ -106,6 +130,42 @@ present); no `pkg_add liboqs` needed on deploy hosts.
 ### Linux
 
 Template not yet shipped (coming).
+
+## SQIsign build setup
+
+The SQIsign reference C library is not packaged in MacPorts, pkgsrc,
+or any Linux distro, so it must be built from source once per build
+host. The helper script `sqisignc/build-sqisign.sh` clones the
+upstream repo (https://github.com/SQISign/the-sqisign), builds
+SQIsign-I (lvl1) with CMake, and installs headers + static archives
++ a matching `sqisign.pc` under a chosen prefix:
+
+```
+sh sqisignc/build-sqisign.sh                  # installs to /usr/local/sqisign-lvl1
+sh sqisignc/build-sqisign.sh /opt/sqisign     # custom prefix
+```
+
+Build-host requirements: `cmake >= 3.13`, a C11 compiler, and GMP
+development headers + library (`port install gmp` on MacPorts,
+`pkgin install gmp` on pkgsrc, `apt install libgmp-dev` on
+Debian/Ubuntu).
+
+After the build is installed, source the matching env script in the
+same shell session you build the dnssec-algorithms consumer from:
+
+```
+. sqisignc/sqisign-env.sh
+```
+
+The script auto-detects the install prefix (defaulting to
+`/usr/local/sqisign-lvl1`), exports `PKG_CONFIG_PATH`, and then
+`go build` of the `sqisign1` subpackage Just Works. Override with
+`SQISIGN_PREFIX=/your/path` if needed.
+
+The resulting Go binaries link the static `libsqisign_lvl1*.a`
+archives directly, and depend dynamically on `libgmp` from the
+build host's package set (always present on NetBSD if pkgsrc gmp is
+installed; common on Linux).
 
 ### NetBSD / Linux: full-static, no-OpenSSL alternative
 
