@@ -31,28 +31,34 @@ if [ -z "$__sqi_env_self" ]; then
 fi
 
 __sqi_env_uname=$(uname -s 2>/dev/null || echo unknown)
+# The script's own directory is the natural place developers run
+# build-sqisign.sh into (./local-install/), so probe that first.
+__sqi_env_local="$__sqi_env_self/local-install"
 case "$__sqi_env_uname" in
    NetBSD)
-      __sqi_env_search='/usr/local/sqisign-lvl1
+      __sqi_env_search="$__sqi_env_local
+/usr/local/sqisign-lvl1
 /usr/pkg
-/usr/local'
+/usr/local"
       __sqi_env_cgo_ldflags=""
       __sqi_env_os_note="NetBSD (self-built static archive; system libgmp)"
       ;;
    Darwin)
-      __sqi_env_search='/usr/local/sqisign-lvl1
+      __sqi_env_search="$__sqi_env_local
+/usr/local/sqisign-lvl1
 /opt/local/sqisign-lvl1
 /opt/local
 /opt/homebrew/sqisign-lvl1
 /opt/homebrew
-/usr/local'
+/usr/local"
       __sqi_env_cgo_ldflags=""
       __sqi_env_os_note="macOS dev (self-built static archive; libgmp via MacPorts/Homebrew)"
       ;;
    Linux)
-      __sqi_env_search='/usr/local/sqisign-lvl1
+      __sqi_env_search="$__sqi_env_local
+/usr/local/sqisign-lvl1
 /usr/local
-/opt/sqisign-lvl1'
+/opt/sqisign-lvl1"
       __sqi_env_cgo_ldflags=""
       __sqi_env_os_note="Linux (self-built static archive; system libgmp)"
       ;;
@@ -118,7 +124,7 @@ if [ -n "$__sqi_env_cgo_ldflags" ]; then
    echo "export CGO_LDFLAGS=\"$__sqi_env_cgo_ldflags\""
 fi
 
-unset __sqi_env_self __sqi_env_uname __sqi_env_search \
+unset __sqi_env_self __sqi_env_local __sqi_env_uname __sqi_env_search \
    __sqi_env_cgo_ldflags __sqi_env_os_note __sqi_env_prefix \
    __sqi_env_chosen __sqi_env_pkg_dir __sqi_env_pkg_path __p
 unset -f __sqi_env_probe 2>/dev/null
