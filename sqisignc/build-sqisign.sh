@@ -120,7 +120,32 @@ for libname in ${LVL1_LIBS}; do
    cp "${src}" "${INSTALL_LIB}/"
    LIBS_LINE="${LIBS_LINE} \${SQISIGN_LIB_DIR}/${libname}"
 done
-LIBS_LINE="${LIBS_LINE} -lgmp -lm"
+
+# Locate libgmp.a so the .pc emits an absolute path. Without this the
+# linker prefers libgmp.so (when both are present in a search dir),
+# which makes the resulting binary depend on libgmp at runtime — and
+# on NetBSD pkgsrc / MacPorts the .so lives outside ld.elf_so's default
+# search path, so the binary fails to start. Probe order matches
+# liboqs/sqisign-env.sh conventions (MacPorts before Homebrew).
+GMP_A=""
+for d in /usr/pkg/lib /opt/local/lib /opt/homebrew/lib /usr/local/lib \
+         /usr/lib/x86_64-linux-gnu /usr/lib; do
+   if [ -f "$d/libgmp.a" ]; then
+      GMP_A="$d/libgmp.a"
+      break
+   fi
+done
+if [ -z "$GMP_A" ]; then
+   echo "==> ERROR: libgmp.a not found in any well-known prefix" >&2
+   echo "    Install gmp's static archive:" >&2
+   echo "      NetBSD pkgsrc:  pkgin install gmp" >&2
+   echo "      MacPorts:       port install gmp" >&2
+   echo "      Debian/Ubuntu:  apt install libgmp-dev" >&2
+   exit 1
+fi
+echo "==> Using static libgmp at ${GMP_A}"
+
+LIBS_LINE="${LIBS_LINE} ${GMP_A} -lm"
 
 cat > "${INSTALL_PC}/sqisign.pc" <<EOF
 SQISIGN_INCLUDE_DIR=${INSTALL_INC}
