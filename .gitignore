@@ -1,2 +1,9 @@
 # Local build artifacts from sqisignc/build-sqisign.sh — don't commit.
 sqisignc/local-install/
+
+# Local build artifacts from qruovc/build-qruov.sh — don't commit.
+qruovc/local-install/
+
+# Compiled cmd binaries (same name as their dir) — don't commit.
+cmd/demo/demo
+cmd/qruovtest/qruovtest
