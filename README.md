@@ -20,6 +20,7 @@ branch).
 | `snova24_5_4/` | SNOVA-24_5_4 (NIST onramp) | 203 (Unassigned) | candidate | liboqs-go | liboqs |
 | `sqisign1/` | SQIsign-I (NIST onramp) | 204 (Unassigned) | candidate | the-sqisign reference C | the-sqisign, libgmp |
 | `qruov1/` | QR-UOV-I, q=31 L=3 (NIST onramp) | 205 (Unassigned) | candidate | QR-UOV round2 reference C | qruov/round2, libcrypto |
+| `mayo2/` | MAYO-2 (NIST onramp) | 206 (Unassigned) | candidate | liboqs-go | liboqs |
 
 The "Demo codepoint" column shows the number used by this repo's
 demo program and tests only. The subpackages themselves do not
