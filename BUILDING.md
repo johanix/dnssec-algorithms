@@ -167,7 +167,7 @@ same shell session you build from:
 
 The script auto-detects the install prefix (defaulting to
 `/usr/local/qruov-i`, and probing `qruovc/local-install/` first),
-exports `PKG_CONFIG_PATH`, and then `go build` of the `qruov1`
+exports `PKG_CONFIG_PATH`, and then `go build` of the `qruov_q31_l3`
 subpackage Just Works. Override with `QRUOV_PREFIX=/your/path` if
 needed.
 

@@ -1,4 +1,4 @@
-// Package qruov1 provides a [dns.Algorithm] implementation of QR-UOV-I
+// Package qruov_q31_l3 provides a [dns.Algorithm] implementation of QR-UOV-I
 // (the level-1, q=31 L=3 parameter set of the QR-UOV post-quantum
 // signature scheme, NIST onramp candidate, multivariate) for DNSSEC
 // SIG(0) transaction signing and RRSIG zone signing.
@@ -12,7 +12,7 @@
 // The package does not own a DNSSEC algorithm codepoint. The caller
 // chooses one and binds it at registration time:
 //
-//	dns.RegisterAlgorithm(N, qruov1.New())
+//	dns.RegisterAlgorithm(N, qruov_q31_l3.New())
 //
 // This repo's tests and demo use number 205 by convention; downstream
 // applications may pick any value from the private-use or experimental
@@ -49,8 +49,8 @@
 // Importing this package for its side effects registers the algorithm
 // with [github.com/miekg/dns]:
 //
-//	import _ "github.com/johanix/dnssec-algorithms/qruov1"
-package qruov1
+//	import _ "github.com/johanix/dnssec-algorithms/qruov_q31_l3"
+package qruov_q31_l3
 
 import (
 	"crypto"
@@ -69,7 +69,7 @@ type Impl struct{}
 // New returns a [dns.Algorithm] implementation for QR-UOV-I.
 func New() *Impl { return &Impl{} }
 
-func (*Impl) Name() string      { return "QRUOV1" }
+func (*Impl) Name() string      { return "QRUOV_Q31_L3" }
 func (*Impl) Hash() crypto.Hash { return 0 }
 
 func (*Impl) Generate(bits int) (crypto.PrivateKey, error) {
@@ -81,7 +81,7 @@ func (*Impl) Generate(bits int) (crypto.PrivateKey, error) {
 
 func (*Impl) PublicKeyFromWire(buf []byte) (crypto.PublicKey, error) {
 	if len(buf) != qruovc.PublicKeySize {
-		return nil, fmt.Errorf("qruov-1 public key length %d, want %d", len(buf), qruovc.PublicKeySize)
+		return nil, fmt.Errorf("qruov_q31_l3 public key length %d, want %d", len(buf), qruovc.PublicKeySize)
 	}
 	out := make([]byte, len(buf))
 	copy(out, buf)

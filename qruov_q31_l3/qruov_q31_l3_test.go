@@ -1,4 +1,4 @@
-package qruov1_test
+package qruov_q31_l3_test
 
 import (
 	"crypto"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/johanix/dnssec-algorithms/qruov1"
+	"github.com/johanix/dnssec-algorithms/qruov_q31_l3"
 )
 
 // codepoint is the experimental DNSSEC algorithm number this test
@@ -18,7 +18,7 @@ const codepoint = 205
 
 // Registration is process-global in miekg/dns, so do it once.
 func init() {
-	if err := dns.RegisterAlgorithm(codepoint, qruov1.New()); err != nil {
+	if err := dns.RegisterAlgorithm(codepoint, qruov_q31_l3.New()); err != nil {
 		panic("RegisterAlgorithm: " + err.Error())
 	}
 }
@@ -44,11 +44,11 @@ func newKey(t *testing.T) (*dns.DNSKEY, crypto.Signer) {
 }
 
 func TestRegistration(t *testing.T) {
-	if got := dns.AlgorithmToString[codepoint]; got != "QRUOV1" {
-		t.Errorf("AlgorithmToString[%d] = %q, want QRUOV1", codepoint, got)
+	if got := dns.AlgorithmToString[codepoint]; got != "QRUOV_Q31_L3" {
+		t.Errorf("AlgorithmToString[%d] = %q, want QRUOV_Q31_L3", codepoint, got)
 	}
-	if got := dns.StringToAlgorithm["QRUOV1"]; got != codepoint {
-		t.Errorf("StringToAlgorithm[QRUOV1] = %d, want %d", got, codepoint)
+	if got := dns.StringToAlgorithm["QRUOV_Q31_L3"]; got != codepoint {
+		t.Errorf("StringToAlgorithm[QRUOV_Q31_L3] = %d, want %d", got, codepoint)
 	}
 	if got := dns.AlgorithmToHash[codepoint]; got != 0 {
 		t.Errorf("AlgorithmToHash[%d] = %v, want 0 (identity)", codepoint, got)
@@ -84,7 +84,7 @@ func TestPrivateKeyRoundTrip(t *testing.T) {
 // reseeding all work end to end.
 func TestDirectCrypto(t *testing.T) {
 	_, signer := newKey(t)
-	impl := qruov1.New()
+	impl := qruov_q31_l3.New()
 	msg := []byte("the quick brown fox jumps over the lazy dog")
 
 	sig, err := signer.Sign(nil, msg, crypto.Hash(0))
