@@ -126,7 +126,7 @@ type Signer struct {
 }
 
 // Public returns the raw public key as a crypto.PublicKey. The
-// concrete value is []byte; the qruov1 subpackage wraps this in
+// concrete value is []byte; the qruov_q31_l3 subpackage wraps this in
 // PublicKeyToWire / PublicKeyFromWire conversions.
 func (s *Signer) Public() crypto.PublicKey { return s.Pub }
 

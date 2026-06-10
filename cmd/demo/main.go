@@ -26,7 +26,7 @@ import (
 	"github.com/johanix/dnssec-algorithms/mayo1"
 	"github.com/johanix/dnssec-algorithms/mayo2"
 	"github.com/johanix/dnssec-algorithms/mldsa44"
-	"github.com/johanix/dnssec-algorithms/qruov1"
+	"github.com/johanix/dnssec-algorithms/qruov_q31_l3"
 	"github.com/johanix/dnssec-algorithms/slhdsa128s"
 	"github.com/johanix/dnssec-algorithms/snova24_5_4"
 	"github.com/johanix/dnssec-algorithms/sqisign1"
@@ -46,7 +46,7 @@ var algorithms = []struct {
 	{202, "MAYO1", mayo1.New()},
 	{203, "SNOVA24_5_4", snova24_5_4.New()},
 	{204, "SQISIGN1", sqisign1.New()},
-	{205, "QRUOV1", qruov1.New()},
+	{205, "QRUOV_Q31_L3", qruov_q31_l3.New()},
 	{206, "MAYO2", mayo2.New()},
 }
 

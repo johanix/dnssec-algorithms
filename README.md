@@ -19,7 +19,7 @@ branch).
 | `mayo1/` | MAYO-1 (NIST onramp) | 202 (Unassigned) | candidate | liboqs-go | liboqs |
 | `snova24_5_4/` | SNOVA-24_5_4 (NIST onramp) | 203 (Unassigned) | candidate | liboqs-go | liboqs |
 | `sqisign1/` | SQIsign-I (NIST onramp) | 204 (Unassigned) | candidate | the-sqisign reference C | the-sqisign, libgmp |
-| `qruov1/` | QR-UOV-I, q=31 L=3 (NIST onramp) | 205 (Unassigned) | candidate | QR-UOV round2 reference C | qruov/round2, libcrypto |
+| `qruov_q31_l3/` | QR-UOV-I, q=31 L=3 (NIST onramp) | 205 (Unassigned) | candidate | QR-UOV round2 reference C | qruov/round2, libcrypto |
 | `mayo2/` | MAYO-2 (NIST onramp) | 206 (Unassigned) | candidate | liboqs-go | liboqs |
 
 The "Demo codepoint" column shows the number used by this repo's
@@ -67,7 +67,7 @@ sh sqisignc/build-sqisign.sh   # one-time build+install from source
 # qruov/round2 — QR-UOV-I (205)
 sh qruovc/build-qruov.sh       # one-time build+install from source
 . qruovc/qruov-env.sh
-#   import _ ".../qruov1"
+#   import _ ".../qruov_q31_l3"
 ```
 
 Then `go build` your program; registration is automatic on import.

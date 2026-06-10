@@ -1,12 +1,12 @@
 // Command qruovtest exercises the QR-UOV-I algorithm end to end
 // through the miekg/dns registration API: keygen, RRSIG sign+verify,
 // SIG(0) sign+verify, a direct adapter crypto round-trip, and a
-// private-key string round-trip. It imports only qruov1 (not the
+// private-key string round-trip. It imports only qruov_q31_l3 (not the
 // liboqs/sqisign subpackages), so it links with just libqruov.a +
 // libcrypto.
 //
 // This is a standalone smoke-test binary; the same coverage lives as
-// go tests in qruov1/qruov1_test.go.
+// go tests in qruov_q31_l3/qruov_q31_l3_test.go.
 package main
 
 import (
@@ -18,7 +18,7 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/johanix/dnssec-algorithms/qruov1"
+	"github.com/johanix/dnssec-algorithms/qruov_q31_l3"
 )
 
 const codepoint = 205
@@ -29,7 +29,7 @@ func fail(format string, a ...any) {
 }
 
 func main() {
-	if err := dns.RegisterAlgorithm(codepoint, qruov1.New()); err != nil {
+	if err := dns.RegisterAlgorithm(codepoint, qruov_q31_l3.New()); err != nil {
 		fail("RegisterAlgorithm: %v", err)
 	}
 	hashStr := "identity (0)"
@@ -84,7 +84,7 @@ func main() {
 		}
 		fmt.Printf("direct sign: %d-byte signature\n", len(rawSig))
 
-		impl := qruov1.New()
+		impl := qruov_q31_l3.New()
 		pubWire, err := impl.PublicKeyToWire(signer.Public())
 		if err != nil {
 			fail("PublicKeyToWire: %v", err)

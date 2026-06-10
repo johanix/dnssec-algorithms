@@ -1,4 +1,4 @@
-package qruov1
+package qruov_q31_l3
 
 import (
 	"crypto"
@@ -59,7 +59,7 @@ func (pkcs8Codec) ParsePKCS8(der []byte) (crypto.PrivateKey, error) {
 	}
 	s, err := qruovc.UnmarshalBinary(p.PrivateKey)
 	if err != nil {
-		return nil, fmt.Errorf("qruov-1 private key decode: %w", err)
+		return nil, fmt.Errorf("qruov_q31_l3 private key decode: %w", err)
 	}
 	return s, nil
 }
