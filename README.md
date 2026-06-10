@@ -21,6 +21,11 @@ branch).
 | `sqisign1/` | SQIsign-I (NIST onramp) | 204 (Unassigned) | candidate | the-sqisign reference C | the-sqisign, libgmp |
 | `qruov1/` | QR-UOV-I, q=31 L=3 (NIST onramp) | 205 (Unassigned) | candidate | QR-UOV round2 reference C | qruov/round2, libcrypto |
 | `mayo2/` | MAYO-2 (NIST onramp) | 206 (Unassigned) | candidate | liboqs-go | liboqs |
+| `mayo3/` | MAYO-3 (NIST onramp) | 207 (Unassigned) | candidate | liboqs-go | liboqs |
+| `mayo5/` | MAYO-5 (NIST onramp) | 208 (Unassigned) | candidate | liboqs-go | liboqs |
+| `falcon1024/` | Falcon-1024 (FIPS 206 draft) | 209 (Unassigned) | draft | liboqs-go | liboqs |
+| `snova37_17_2/` | SNOVA-37_17_2 (NIST onramp) | 210 (Unassigned) | candidate | liboqs-go | liboqs |
+| `snova25_8_3/` | SNOVA-25_8_3 (NIST onramp) | 211 (Unassigned) | candidate | liboqs-go | liboqs |
 
 The "Demo codepoint" column shows the number used by this repo's
 demo program and tests only. The subpackages themselves do not
@@ -33,8 +38,9 @@ demo/testing convention.
 
 `mldsa44` and `slhdsa128s` are pure Go (CIRCL) — no system deps. The
 rest are CGO wrappers over three C codebases: **liboqs** (Falcon-512,
-MAYO-1, SNOVA-24_5_4), **the-sqisign** (SQIsign-I), and **qruov/round2**
-(QR-UOV-I). None of the reference C is vendored; see
+Falcon-1024, MAYO-1, MAYO-2, MAYO-3, MAYO-5, SNOVA-24_5_4,
+SNOVA-37_17_2, SNOVA-25_8_3), **the-sqisign** (SQIsign-I), and
+**qruov/round2** (QR-UOV-I). None of the reference C is vendored; see
 [BUILDING.md](BUILDING.md) for per-codebase, per-platform setup.
 
 ## Quickstart

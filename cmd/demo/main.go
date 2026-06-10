@@ -22,13 +22,18 @@ import (
 
 	"github.com/miekg/dns"
 
+	"github.com/johanix/dnssec-algorithms/falcon1024"
 	"github.com/johanix/dnssec-algorithms/falcon512"
 	"github.com/johanix/dnssec-algorithms/mayo1"
 	"github.com/johanix/dnssec-algorithms/mayo2"
+	"github.com/johanix/dnssec-algorithms/mayo3"
+	"github.com/johanix/dnssec-algorithms/mayo5"
 	"github.com/johanix/dnssec-algorithms/mldsa44"
 	"github.com/johanix/dnssec-algorithms/qruov1"
 	"github.com/johanix/dnssec-algorithms/slhdsa128s"
 	"github.com/johanix/dnssec-algorithms/snova24_5_4"
+	"github.com/johanix/dnssec-algorithms/snova25_8_3"
+	"github.com/johanix/dnssec-algorithms/snova37_17_2"
 	"github.com/johanix/dnssec-algorithms/sqisign1"
 )
 
@@ -48,6 +53,11 @@ var algorithms = []struct {
 	{204, "SQISIGN1", sqisign1.New()},
 	{205, "QRUOV1", qruov1.New()},
 	{206, "MAYO2", mayo2.New()},
+	{207, "MAYO3", mayo3.New()},
+	{208, "MAYO5", mayo5.New()},
+	{209, "FALCON1024", falcon1024.New()},
+	{210, "SNOVA37_17_2", snova37_17_2.New()},
+	{211, "SNOVA25_8_3", snova25_8_3.New()},
 }
 
 func init() {
