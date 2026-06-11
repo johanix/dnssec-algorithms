@@ -81,10 +81,12 @@ Sourcing more than one env script in the same session is fine. Full
 details (platforms, requirements, static-link variants, RNG/perf
 caveats) are in [BUILDING.md](BUILDING.md).
 
-The `cmd/demo` program imports all six algorithms and exercises each
+The `cmd/demo` program imports every algorithm and exercises each
 end-to-end through the miekg/dns public API (it therefore needs all
 three C codebases installed). `cmd/qruovtest` is a QR-UOV-only smoke
-test.
+test. `cmd/algbench` measures sign/verify cost per algorithm relative
+to ED25519 (run it on your reference hardware; the relative costs are
+hardware-specific).
 
 ## Codepoint disclaimer
 
