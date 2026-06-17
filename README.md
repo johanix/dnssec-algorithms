@@ -14,6 +14,8 @@ branch).
 | Subpackage | Algorithm | Demo codepoint | Standardization | Backend | Build dep |
 |---|---|---|---|---|---|
 | `mldsa44/` | ML-DSA-44 (FIPS 204) | 199 (Unassigned) | final | CIRCL, pure Go | none |
+| `mldsa65/` | ML-DSA-65 (FIPS 204) | 212 (Unassigned) | final | CIRCL, pure Go | none |
+| `mldsa87/` | ML-DSA-87 (FIPS 204) | 213 (Unassigned) | final | CIRCL, pure Go | none |
 | `slhdsa128s/` | SLH-DSA-SHA2-128s (FIPS 205) | 200 (Unassigned) | final | CIRCL, pure Go | none |
 | `falcon512/` | Falcon-512 (FIPS 206 draft) | 201 (Unassigned) | draft | liboqs-go | liboqs |
 | `mayo1/` | MAYO-1 (NIST onramp) | 202 (Unassigned) | candidate | liboqs-go | liboqs |
