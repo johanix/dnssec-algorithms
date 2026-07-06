@@ -1,20 +1,30 @@
 // Command algbench measures DNSSEC sign and verify cost for every
 // algorithm — classical built-ins plus the out-of-tree algorithms in
-// this repo — and reports the cost RELATIVE TO ED25519 (= 1), the same
-// reference the tdns algorithms.yaml enrichment uses.
+// this repo — and reports the cost RELATIVE TO ED25519 (= 1).
+//
+// The set of algorithms and their codepoints come from the registry
+// package (the single source of truth); algbench only supplies each one's
+// implementation to benchmark. A registry algorithm with no wired
+// implementation is a hard error, so the benchmark can never silently
+// drift from the registry.
 //
 // It drives everything through the miekg/dns RRSIG Sign/Verify path
 // (the same path tdns servers use), so built-ins (ED25519, ECDSA, RSA)
 // and registered algorithms are timed identically and comparably.
 //
-// Output is a paste-ready block of `signingcost:` / `validationcost:`
-// values per algorithm, plus a table with the raw timings.
+// Output is a table of raw timings, plus the per-architecture cost YAML
+// (algorithm-costs.yaml). Costs are machine-dependent, so the YAML is
+// keyed by CPU architecture:
 //
-// Build and run:
-//
-//	go run ./cmd/algbench                 # default iterations
-//	go run ./cmd/algbench -n 200          # more iterations (steadier)
-//	go run ./cmd/algbench -rsabits 3072   # RSA key size (default 2048)
+//	go run ./cmd/algbench                       # print costs for this arch
+//	go run ./cmd/algbench -write algorithm-costs.yaml
+//	                                            # merge into the file, under
+//	                                            # this host's arch block,
+//	                                            # preserving other arches
+//	go run ./cmd/algbench -arch amd64 -write algorithm-costs.yaml
+//	                                            # label the block explicitly
+//	go run ./cmd/algbench -n 200                # more iterations (steadier)
+//	go run ./cmd/algbench -rsabits 3072         # RSA key size (default 2048)
 //
 // The C-backed algorithms need their libraries built and on
 // PKG_CONFIG_PATH (see BUILDING.md); algorithms whose Generate fails
@@ -30,11 +40,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"sort"
 	"time"
 
 	"github.com/miekg/dns"
+	"gopkg.in/yaml.v3"
 
+	"github.com/johanix/dnssec-algorithms/cross_rsdpg_128_small"
 	"github.com/johanix/dnssec-algorithms/falcon1024"
 	"github.com/johanix/dnssec-algorithms/falcon512"
 	"github.com/johanix/dnssec-algorithms/mayo1"
@@ -42,7 +55,10 @@ import (
 	"github.com/johanix/dnssec-algorithms/mayo3"
 	"github.com/johanix/dnssec-algorithms/mayo5"
 	"github.com/johanix/dnssec-algorithms/mldsa44"
+	"github.com/johanix/dnssec-algorithms/mldsa65"
+	"github.com/johanix/dnssec-algorithms/mldsa87"
 	"github.com/johanix/dnssec-algorithms/qruov_q31_l3"
+	"github.com/johanix/dnssec-algorithms/registry"
 	"github.com/johanix/dnssec-algorithms/slhdsa128s"
 	"github.com/johanix/dnssec-algorithms/snova24_5_4"
 	"github.com/johanix/dnssec-algorithms/snova25_8_3"
@@ -50,26 +66,29 @@ import (
 	"github.com/johanix/dnssec-algorithms/sqisign1"
 )
 
-// registered are the out-of-tree algorithms wired into miekg/dns.
-// Codepoints match cmd/demo and the tdns app registration.
-var registered = []struct {
-	num  uint8
-	name string
-	impl dns.Algorithm
-}{
-	{199, "MLDSA44", mldsa44.New()},
-	{200, "SLHDSA128S", slhdsa128s.New()},
-	{201, "FALCON512", falcon512.New()},
-	{202, "MAYO1", mayo1.New()},
-	{203, "SNOVA24_5_4", snova24_5_4.New()},
-	{204, "SQISIGN1", sqisign1.New()},
-	{205, "QRUOV_Q31_L3", qruov_q31_l3.New()},
-	{206, "MAYO2", mayo2.New()},
-	{207, "MAYO3", mayo3.New()},
-	{208, "MAYO5", mayo5.New()},
-	{209, "FALCON1024", falcon1024.New()},
-	{210, "SNOVA37_17_2", snova37_17_2.New()},
-	{211, "SNOVA25_8_3", snova25_8_3.New()},
+// impls maps a registry algorithm Name to its constructor. The set of
+// algorithms and their codepoints come from the registry (the single
+// source of truth); this map only supplies the concrete implementation to
+// benchmark. Every registry algorithm must have an entry here — a missing
+// one is a hard error at startup, so this can never silently drift from
+// the registry the way the old hardcoded list did.
+var impls = map[string]func() dns.Algorithm{
+	"MLDSA44":            func() dns.Algorithm { return mldsa44.New() },
+	"MLDSA65":            func() dns.Algorithm { return mldsa65.New() },
+	"MLDSA87":            func() dns.Algorithm { return mldsa87.New() },
+	"SLHDSA128S":         func() dns.Algorithm { return slhdsa128s.New() },
+	"FALCON512":          func() dns.Algorithm { return falcon512.New() },
+	"FALCON1024":         func() dns.Algorithm { return falcon1024.New() },
+	"MAYO1":              func() dns.Algorithm { return mayo1.New() },
+	"MAYO2":              func() dns.Algorithm { return mayo2.New() },
+	"MAYO3":              func() dns.Algorithm { return mayo3.New() },
+	"MAYO5":              func() dns.Algorithm { return mayo5.New() },
+	"SNOVA24_5_4":        func() dns.Algorithm { return snova24_5_4.New() },
+	"SNOVA37_17_2":       func() dns.Algorithm { return snova37_17_2.New() },
+	"SNOVA25_8_3":        func() dns.Algorithm { return snova25_8_3.New() },
+	"SQISIGN1":           func() dns.Algorithm { return sqisign1.New() },
+	"QRUOV_Q31_L3":       func() dns.Algorithm { return qruov_q31_l3.New() },
+	"CROSSRSDPG128SMALL": func() dns.Algorithm { return cross_rsdpg_128_small.New() },
 }
 
 // classical are the miekg/dns built-ins we also time. RSA entries are
@@ -98,20 +117,32 @@ type result struct {
 func main() {
 	n := flag.Int("n", 100, "iterations per measured operation")
 	rsabits := flag.Int("rsabits", 2048, "RSA key size in bits (for RSASHA*)")
+	arch := flag.String("arch", runtime.GOARCH, "architecture label for the cost block (defaults to this host's GOARCH)")
+	write := flag.String("write", "", "merge the measured costs into this algorithm-costs.yaml file, under the -arch block")
 	flag.Parse()
 
-	for _, a := range registered {
-		if err := dns.RegisterAlgorithm(a.num, a.impl); err != nil {
-			fmt.Fprintf(os.Stderr, "RegisterAlgorithm(%d, %s): %v\n", a.num, a.name, err)
+	// The registry is the single source of truth for which PQ algorithms
+	// exist and their codepoints. Register each one's implementation from
+	// the impls map; a registry algorithm with no impl entry is a hard
+	// error (the map has drifted from the registry and must be fixed).
+	for _, a := range registry.Algorithms {
+		newImpl, ok := impls[a.Name]
+		if !ok {
+			fmt.Fprintf(os.Stderr, "no implementation wired for registry algorithm %s (%d); add it to impls in cmd/algbench\n", a.Name, a.Codepoint)
+			os.Exit(1)
+		}
+		if err := dns.RegisterAlgorithm(a.Codepoint, newImpl()); err != nil {
+			fmt.Fprintf(os.Stderr, "RegisterAlgorithm(%d, %s): %v\n", a.Codepoint, a.Name, err)
 			os.Exit(1)
 		}
 	}
 
-	var all []struct {
+	type algRow struct {
 		num  uint8
 		name string
 		bits int
 	}
+	var all []algRow
 	for _, a := range classical {
 		// miekg/dns built-ins require a specific key size in Generate:
 		// RSA takes -rsabits; ECDSA P-256/ED25519 take 256, P-384 takes
@@ -125,18 +156,10 @@ func main() {
 		case dns.ECDSAP384SHA384:
 			bits = 384
 		}
-		all = append(all, struct {
-			num  uint8
-			name string
-			bits int
-		}{a.num, a.name, bits})
+		all = append(all, algRow{a.num, a.name, bits})
 	}
-	for _, a := range registered {
-		all = append(all, struct {
-			num  uint8
-			name string
-			bits int
-		}{a.num, a.name, 0})
+	for _, a := range registry.Algorithms {
+		all = append(all, algRow{a.Codepoint, a.Name, 0})
 	}
 
 	results := make([]result, 0, len(all))
@@ -158,7 +181,15 @@ func main() {
 	}
 
 	printTable(results, refSign, refVerify)
-	printYAML(results, refSign, refVerify)
+	if *write != "" {
+		if err := writeCostsFile(*write, *arch, results, refSign, refVerify); err != nil {
+			fmt.Fprintf(os.Stderr, "writing %s: %v\n", *write, err)
+			os.Exit(1)
+		}
+		fmt.Printf("# merged %s costs into %s\n", *arch, *write)
+	} else {
+		printCostsYAML(*arch, results, refSign, refVerify)
+	}
 }
 
 // benchmark generates one key for (num, bits), then times n RRSIG
@@ -282,15 +313,77 @@ func printTable(results []result, refSign, refVerify float64) {
 	fmt.Println()
 }
 
-func printYAML(results []result, refSign, refVerify float64) {
-	fmt.Printf("# Paste-ready: signingcost / validationcost relative to %s.\n", referenceName)
-	fmt.Printf("# Drop these two lines into each profile in algorithms.yaml.\n\n")
+// cost is one algorithm's relative signing/validation cost.
+type cost struct {
+	Signing    float64 `yaml:"signing"`
+	Validation float64 `yaml:"validation"`
+}
+
+// costsFile is the on-disk multi-arch cost table:
+//
+//	costs:
+//	   arm64:
+//	      MLDSA44: { signing: 3.1, validation: 1.9 }
+//	   amd64:
+//	      MLDSA44: { signing: 2.8, validation: 1.7 }
+type costsFile struct {
+	Costs map[string]map[string]cost `yaml:"costs"`
+}
+
+// measuredCosts builds the per-algorithm cost map for one benchmark run,
+// skipping algorithms that could not be measured.
+func measuredCosts(results []result, refSign, refVerify float64) map[string]cost {
+	out := map[string]cost{}
 	for _, r := range results {
 		if r.skipped != "" {
-			fmt.Printf("      %s:\n         # skipped: %s\n", r.name, r.skipped)
 			continue
 		}
-		fmt.Printf("      %s:\n         signingcost:     %g\n         validationcost:  %g\n",
-			r.name, relCost(r.signNs, refSign), relCost(r.verifyNs, refVerify))
+		out[r.name] = cost{
+			Signing:    relCost(r.signNs, refSign),
+			Validation: relCost(r.verifyNs, refVerify),
+		}
 	}
+	return out
+}
+
+// printCostsYAML prints the multi-arch cost YAML for this run to stdout,
+// with just the one arch block. Useful for inspection; -write merges into
+// a file instead.
+func printCostsYAML(arch string, results []result, refSign, refVerify float64) {
+	cf := costsFile{Costs: map[string]map[string]cost{arch: measuredCosts(results, refSign, refVerify)}}
+	out, err := yaml.Marshal(cf)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "marshaling costs: %v\n", err)
+		return
+	}
+	fmt.Printf("# Signing/validation cost relative to %s (= 1), measured on this host.\n", referenceName)
+	fmt.Printf("# -write <file> merges this under costs.%s, preserving other architectures.\n\n%s", arch, out)
+}
+
+// writeCostsFile merges this run's costs into path under the arch block,
+// preserving cost blocks for other architectures already in the file. The
+// file is created if absent.
+func writeCostsFile(path, arch string, results []result, refSign, refVerify float64) error {
+	var cf costsFile
+	if data, err := os.ReadFile(path); err == nil {
+		if err := yaml.Unmarshal(data, &cf); err != nil {
+			return fmt.Errorf("parsing existing %s: %w", path, err)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	if cf.Costs == nil {
+		cf.Costs = map[string]map[string]cost{}
+	}
+	cf.Costs[arch] = measuredCosts(results, refSign, refVerify)
+
+	out, err := yaml.Marshal(cf)
+	if err != nil {
+		return err
+	}
+	header := fmt.Sprintf("# Signing/validation cost per algorithm, relative to %s (= 1), by CPU\n"+
+		"# architecture. Produced by cmd/algbench; the shape is stable, the exact\n"+
+		"# factors are hardware-specific. Regenerate an arch block with:\n"+
+		"#   go run ./cmd/algbench -write %s\n\n", referenceName, path)
+	return os.WriteFile(path, append([]byte(header), out...), 0o644)
 }

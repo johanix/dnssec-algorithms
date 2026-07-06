@@ -1,0 +1,70 @@
+# Signing/validation cost per algorithm, relative to ED25519 (= 1), by CPU
+# architecture. Produced by cmd/algbench; the shape is stable, the exact
+# factors are hardware-specific. Regenerate an arch block with:
+#   go run ./cmd/algbench -write algorithm-costs.yaml
+
+costs:
+    arm64:
+        CROSSRSDPG128SMALL:
+            signing: 61
+            validation: 19
+        ECDSAP256SHA256:
+            signing: 1
+            validation: 1.3
+        ECDSAP384SHA384:
+            signing: 7.1
+            validation: 11
+        ED25519:
+            signing: 1
+            validation: 1
+        FALCON512:
+            signing: 7
+            validation: 0.7
+        FALCON1024:
+            signing: 14
+            validation: 1.2
+        MAYO1:
+            signing: 6.4
+            validation: 1.4
+        MAYO2:
+            signing: 4.5
+            validation: 0.8
+        MAYO3:
+            signing: 16
+            validation: 3.5
+        MAYO5:
+            signing: 34
+            validation: 7.2
+        MLDSA44:
+            signing: 8.5
+            validation: 2
+        MLDSA65:
+            signing: 6
+            validation: 3
+        MLDSA87:
+            signing: 12
+            validation: 4.8
+        QRUOV_Q31_L3:
+            signing: 69
+            validation: 33
+        RSASHA256:
+            signing: 48
+            validation: 0.8
+        RSASHA512:
+            signing: 48
+            validation: 0.8
+        SLHDSA128S:
+            signing: 7467
+            validation: 4.2
+        SNOVA24_5_4:
+            signing: 19
+            validation: 4.2
+        SNOVA25_8_3:
+            signing: 14
+            validation: 2.6
+        SNOVA37_17_2:
+            signing: 32
+            validation: 11
+        SQISIGN1:
+            signing: 2067
+            validation: 60
