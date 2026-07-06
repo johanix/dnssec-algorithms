@@ -42,3 +42,32 @@ func TestTableIntegrity(t *testing.T) {
 		}
 	}
 }
+
+// TestFactsCoverage guards that AlgorithmFacts (external, name-keyed
+// static facts) stays in step with the Algorithms decisions table: every
+// registry algorithm has a facts entry, and every facts entry is either a
+// registry algorithm or a known classical built-in (not a typo'd orphan).
+func TestFactsCoverage(t *testing.T) {
+	classical := map[string]bool{
+		"ED25519": true, "ECDSAP256SHA256": true, "ECDSAP384SHA384": true,
+		"RSASHA256": true, "RSASHA512": true,
+	}
+
+	inRegistry := map[string]bool{}
+	for _, a := range Algorithms {
+		inRegistry[a.Name] = true
+		if _, ok := AlgorithmFacts[a.Name]; !ok {
+			t.Errorf("%s: no AlgorithmFacts entry (every registry algorithm needs one)", a.Name)
+		}
+	}
+
+	for name, f := range AlgorithmFacts {
+		if !inRegistry[name] && !classical[name] {
+			t.Errorf("AlgorithmFacts[%q]: not a registry algorithm and not a known classical built-in (typo?)", name)
+		}
+		// Sizes are spec-fixed and non-zero for every real algorithm.
+		if f.PubKeyBytes <= 0 || f.SigBytes <= 0 {
+			t.Errorf("AlgorithmFacts[%q]: PubKeyBytes/SigBytes must be > 0 (got %d/%d)", name, f.PubKeyBytes, f.SigBytes)
+		}
+	}
+}
