@@ -6,8 +6,9 @@ lives in its own subpackage and registers itself with the `dns`
 package at init time via `dns.RegisterAlgorithm`.
 
 Depends on a build of `miekg/dns` that carries the algorithm
-registration API (currently on the `johanix/dns:algorithm-registry`
-branch).
+registration API — provided by the `johanix/dns` fork (pinned via a
+`replace` directive in `go.mod`; the fork's `main` and its
+`v1.1.72-johanix.x` tags carry the API).
 
 ## Available algorithms
 
@@ -28,6 +29,7 @@ branch).
 | `falcon1024/` | Falcon-1024 (FIPS 206 draft) | 209 (Unassigned) | draft | liboqs-go | liboqs |
 | `snova37_17_2/` | SNOVA-37_17_2 (NIST onramp) | 210 (Unassigned) | candidate | liboqs-go | liboqs |
 | `snova25_8_3/` | SNOVA-25_8_3 (NIST onramp) | 211 (Unassigned) | candidate | liboqs-go | liboqs |
+| `cross_rsdpg_128_small/` | CROSS RSDP-G-128-small (NIST onramp) | 214 (Unassigned) | candidate | liboqs-go | liboqs |
 
 The "Demo codepoint" column shows the number used by this repo's
 demo program and tests only. The subpackages themselves do not
@@ -38,11 +40,19 @@ Different consumers are free to use different numbers for the same
 algorithm; the values listed above are simply this repo's
 demo/testing convention.
 
-`mldsa44` and `slhdsa128s` are pure Go (CIRCL) — no system deps. The
-rest are CGO wrappers over three C codebases: **liboqs** (Falcon-512,
-Falcon-1024, MAYO-1, MAYO-2, MAYO-3, MAYO-5, SNOVA-24_5_4,
-SNOVA-37_17_2, SNOVA-25_8_3), **the-sqisign** (SQIsign-I), and
-**qruov/round2** (QR-UOV-I). None of the reference C is vendored; see
+Separately from the demo convention, `registry/registry.go` carries
+the **authoritative** codepoint↔algorithm↔role table that downstream
+generators (e.g. tdns's `tdns-genalgs`) consume. Its numbering is
+family-ordered and does **not** match the demo column above — when in
+doubt about what a deployed system uses, the registry is the source
+of truth.
+
+The ML-DSA family (`mldsa44/65/87`) and `slhdsa128s` are pure Go
+(CIRCL) — no system deps. The rest are CGO wrappers over three C
+codebases: **liboqs** (Falcon-512, Falcon-1024, MAYO-1, MAYO-2,
+MAYO-3, MAYO-5, SNOVA-24_5_4, SNOVA-37_17_2, SNOVA-25_8_3, CROSS
+RSDP-G-128-small), **the-sqisign** (SQIsign-I), and **qruov/round2**
+(QR-UOV-I). None of the reference C is vendored; see
 [BUILDING.md](BUILDING.md) for per-codebase, per-platform setup.
 
 ## Quickstart
@@ -83,10 +93,11 @@ Sourcing more than one env script in the same session is fine. Full
 details (platforms, requirements, static-link variants, RNG/perf
 caveats) are in [BUILDING.md](BUILDING.md).
 
-The `cmd/demo` program imports every algorithm and exercises each
+The `cmd/demo` program imports the algorithms and exercises each
 end-to-end through the miekg/dns public API (it therefore needs all
-three C codebases installed). `cmd/qruovtest` is a QR-UOV-only smoke
-test. `cmd/algbench` measures sign/verify cost per algorithm relative
+three C codebases installed). It currently covers all subpackages
+except `mldsa65`, `mldsa87`, and `cross_rsdpg_128_small` (not yet
+wired in). `cmd/qruovtest` is a QR-UOV-only smoke test. `cmd/algbench` measures sign/verify cost per algorithm relative
 to ED25519 (run it on your reference hardware; the relative costs are
 hardware-specific).
 
