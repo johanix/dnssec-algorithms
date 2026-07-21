@@ -91,9 +91,36 @@ cd "src/${QRUOV_PLATFORM}"
 if pkg-config --exists libcrypto 2>/dev/null; then
    SSL_CFLAGS=$(pkg-config --cflags libcrypto)
    SSL_LIBS=$(pkg-config --libs libcrypto)
+   SSL_LIBDIR=$(pkg-config --variable=libdir libcrypto)
 else
    SSL_CFLAGS=""
    SSL_LIBS="-lcrypto"
+   SSL_LIBDIR=""
+fi
+
+# Locate libcrypto.a so the .pc emits an absolute path, mirroring the
+# libgmp.a handling in sqisignc/build-sqisign.sh. With a bare -lcrypto
+# the linker prefers libcrypto.so, making the binary depend on a
+# libcrypto at runtime — and on NetBSD pkgsrc / MacPorts that .so
+# lives outside the runtime linker's default search path (and go/cgo
+# links embed no rpath), so the binary only starts with
+# LD_LIBRARY_PATH set. When the static archive exists, use it for the
+# header-generator programs and the .pc alike (-lpthread because
+# libcrypto.a needs it and, unlike the .so, cannot record the
+# dependency itself); otherwise fall back to the dynamic flags.
+CRYPTO_A=""
+for d in ${SSL_LIBDIR} /usr/pkg/lib /opt/local/lib /opt/homebrew/lib \
+         /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib; do
+   if [ -f "$d/libcrypto.a" ]; then
+      CRYPTO_A="$d/libcrypto.a"
+      break
+   fi
+done
+if [ -n "$CRYPTO_A" ]; then
+   echo "==> Using static libcrypto at ${CRYPTO_A}"
+   SSL_LIBS="${CRYPTO_A} -lpthread"
+else
+   echo "==> No libcrypto.a found; falling back to dynamic: ${SSL_LIBS}"
 fi
 
 CC=${CC:-cc}

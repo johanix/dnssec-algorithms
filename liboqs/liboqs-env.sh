@@ -42,7 +42,7 @@ case "$__libqs_env_uname" in
       __libqs_env_search='/usr/pkg
 /usr/local'
       __libqs_env_cgo_ldflags="-lcrypto"
-      __libqs_env_os_note="NetBSD pkgsrc (static-link liboqs.a, dynamic libcrypto)"
+      __libqs_env_os_note="NetBSD pkgsrc (static-link liboqs.a; static libcrypto.a when available)"
       ;;
    Darwin)
       # MacPorts (Intel + Apple Silicon) then Homebrew (Apple Silicon,
@@ -114,6 +114,20 @@ if [ -z "$__libqs_env_inc" ]; then
    echo "# or set LIBOQS_PREFIX=/your/path." >&2
    echo "# See dnssec-algorithms/README.md for per-platform notes." >&2
    return 1 2>/dev/null || exit 1
+fi
+
+# NetBSD: liboqs.a is linked statically, so its libcrypto dependency
+# must be supplied on the link line. Prefer the pkgsrc static archive:
+# base (/usr/lib, libcrypto.so.15) and pkgsrc (/usr/pkg/lib,
+# libcrypto.so.3) have different sonames, and a cgo link records
+# NEEDED libcrypto.so.3 without an rpath (pkgsrc's compiler wrapper
+# normally injects -Wl,-R/usr/pkg/lib; go/cgo does not), so a
+# dynamically linked binary only starts with LD_LIBRARY_PATH set.
+# Linking the archive by absolute path removes the runtime dependency
+# entirely. CGO_LDFLAGS is appended after the per-package flags, so
+# the archive lands after liboqs.a on the link line as required.
+if [ "$__libqs_env_uname" = "NetBSD" ] && [ -f "$__libqs_env_lib/libcrypto.a" ]; then
+   __libqs_env_cgo_ldflags="$__libqs_env_lib/libcrypto.a"
 fi
 
 # Write a fresh pkg-config file with the discovered paths. Always
