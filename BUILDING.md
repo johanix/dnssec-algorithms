@@ -1,15 +1,16 @@
 # Building the CGO-backed algorithms
 
-The pure-Go algorithms (`mldsa44`, `slhdsa128s`) need nothing — they
-compile with a plain `go build`. The remaining algorithms link C
-libraries via CGO and need a one-time per-host setup, plus an env
-script sourced into the shell session you build from.
+The pure-Go algorithms (`mldsa44`, `mldsa65`, `mldsa87`, `slhdsa128s`)
+need nothing — they compile with a plain `go build`. The remaining
+algorithms link C libraries via CGO and need a one-time per-host
+setup, plus an env script sourced into the shell session you build
+from.
 
 There are three C codebases, each with its own build/env scripts:
 
 | Codebase | Algorithms | Packaged? | Setup |
 |---|---|---|---|
-| liboqs | Falcon-512, MAYO-1, SNOVA-24_5_4 | yes (MacPorts/pkgsrc) | install + `liboqs/liboqs-env.sh` |
+| liboqs | Falcon-512/1024, MAYO-1/2/3/5, SNOVA-24_5_4/37_17_2/25_8_3, CROSS RSDP-G-128-small | yes (MacPorts/pkgsrc) | install + `liboqs/liboqs-env.sh` |
 | the-sqisign | SQIsign-I | no | `sqisignc/build-sqisign.sh` + `sqisignc/sqisign-env.sh` |
 | qruov/round2 | QR-UOV-I | no | `qruovc/build-qruov.sh` + `qruovc/qruov-env.sh` |
 
@@ -24,22 +25,26 @@ algorithms at once.
 
 ---
 
-## liboqs (Falcon-512, MAYO-1, SNOVA-24_5_4)
+## liboqs (Falcon, MAYO, SNOVA, CROSS)
 
 These use CGO via `liboqs-go`, which needs `pkg-config` to locate a
 `liboqs-go.pc` pointing at the liboqs install.
 
-**The easy path** — one command per shell session, works on macOS and
-NetBSD:
+**The easy path** — one command per shell session, works on macOS,
+NetBSD, and Linux:
 
 ```
 . liboqs/liboqs-env.sh
 ```
 
-The script detects the OS, copies the matching template from
-`liboqs/pkgconfig/`, exports `PKG_CONFIG_PATH`, and on NetBSD also sets
-`CGO_LDFLAGS=-lcrypto` (a workaround for Go 1.25's cgo pkg-config
-integration filtering `-lcrypto` out of `.pc` Libs lines).
+The script detects the OS, probes the platform's well-known install
+prefixes for liboqs (override with `LIBOQS_PREFIX=/your/path`), writes
+a fresh `liboqs-go.pc` into `liboqs/pkgconfig/` from the discovered
+paths, and exports `PKG_CONFIG_PATH`. On NetBSD it additionally sets
+`CGO_LDFLAGS` to satisfy static liboqs's libcrypto dependency — see
+the NetBSD section below. (`CGO_LDFLAGS` rather than the `.pc` Libs
+line: Go's cgo pkg-config integration filters `-lcrypto` out of `.pc`
+Libs lines.)
 
 If you prefer to `eval` rather than source:
 
@@ -50,9 +55,9 @@ eval "$(liboqs/liboqs-env.sh)"
 ### macOS development host (MacPorts)
 
 Install liboqs from MacPorts (`port install liboqs`) — provides
-`/opt/local/lib/liboqs.dylib`. The env script picks up
-`liboqs-go.pc.macos-dev`, exports `PKG_CONFIG_PATH`, no `CGO_LDFLAGS`
-needed.
+`/opt/local/lib/liboqs.dylib`. The env script detects it (Homebrew
+prefixes are probed too), writes the `.pc`, exports
+`PKG_CONFIG_PATH`; no `CGO_LDFLAGS` needed.
 
 Binaries built this way depend on `liboqs.dylib` + `libcrypto.3.dylib`
 at runtime. Fine for local testing; not for distribution.
@@ -60,31 +65,46 @@ at runtime. Fine for local testing; not for distribution.
 ### NetBSD with pkgsrc liboqs
 
 Install liboqs from pkgsrc (`pkgin install liboqs`) — provides
-`/usr/pkg/lib/liboqs.a`. The env script picks up
-`liboqs-go.pc.netbsd-pkgsrc`, exports `PKG_CONFIG_PATH`, and sets
-`CGO_LDFLAGS=-lcrypto`.
+`/usr/pkg/lib/liboqs.a`. The env script detects it, writes the `.pc`,
+exports `PKG_CONFIG_PATH`, and sets
+`CGO_LDFLAGS=/usr/pkg/lib/libcrypto.a` so liboqs's libcrypto
+dependency is satisfied by pkgsrc's **static** archive.
 
-pkgsrc ships **only** the static archive (no `.so`), so liboqs ends up
-statically linked into the resulting Go binaries. The binaries depend
-on `libcrypto.so` from the NetBSD base system (always present); no
-`pkg_add liboqs` needed on deploy hosts.
+pkgsrc ships **only** the static archive (no `.so`), so liboqs — and,
+via `CGO_LDFLAGS`, libcrypto — end up statically linked into the
+resulting Go binaries. The binaries have **no** runtime libcrypto
+dependency at all; nothing needs to be installed on deploy hosts.
+
+Why not `-lcrypto`? That resolves to pkgsrc's `libcrypto.so.3`, but a
+cgo link embeds no rpath (pkgsrc's compiler wrapper normally injects
+`-Wl,-R/usr/pkg/lib`; go/cgo does not) and the base system's
+libcrypto is a different soname (`.so.15`), so the resulting binary
+only starts with `LD_LIBRARY_PATH=/usr/pkg/lib` set. The script falls
+back to `-lcrypto` only when `/usr/pkg/lib/libcrypto.a` is missing —
+if you end up there, expect to need `LD_LIBRARY_PATH` at runtime.
 
 ### Linux
 
-Template not yet shipped (coming).
+The env script probes `/usr`, `/usr/local`, and `/opt/liboqs` (distro
+liboqs packages are typically shared libraries, so the resulting
+binaries link liboqs dynamically). Not regularly exercised — expect
+rough edges.
 
-### Full-static, no-OpenSSL alternative (NetBSD / Linux)
+### No-OpenSSL alternative (NetBSD / Linux)
 
-If you need the binaries to be **completely** self-contained (no
-libcrypto dep either), run `liboqs/build-liboqs-static.sh` once per
-build host. It builds a custom liboqs with `OQS_USE_OPENSSL=OFF` (uses
-liboqs's internal SHA/AES) and only the three algorithms we use,
-installed under a chosen prefix. Useful when the deploy targets don't
-have a libcrypto compatible with the build host's libcrypto.
+`liboqs/build-liboqs-static.sh` builds a custom static liboqs with
+`OQS_USE_OPENSSL=OFF` (liboqs's internal SHA/AES), removing the
+libcrypto dependency at **build** time as well. Since the standard
+NetBSD flow above already links libcrypto statically, the runtime
+footprint is the same; this script is for hosts without pkgsrc liboqs
+or where you don't want OpenSSL involved at all.
 
-For the standard NetBSD case (deploying to a NetBSD host with the same
-major OS version), the pkgsrc + env-script flow above is simpler and
-sufficient.
+**Caveat:** the script currently builds a minimal liboqs with only
+three algorithms (Falcon-512, MAYO-1, SNOVA-24_5_4) and its
+`OQS_MINIMAL_BUILD` flag names are known-broken (lowercase; see the
+open questions in `docs/pqc-algorithm-families.md`). Extend and fix
+the list before using it. For the standard NetBSD case, the pkgsrc +
+env-script flow above is simpler and sufficient.
 
 ---
 
@@ -118,10 +138,14 @@ The script auto-detects the install prefix (defaulting to
 build` of the `sqisign1` subpackage Just Works. Override with
 `SQISIGN_PREFIX=/your/path` if needed.
 
-The resulting Go binaries link the static `libsqisign_lvl1*.a` archives
-directly, and depend dynamically on `libgmp` from the build host's
-package set (always present on NetBSD if pkgsrc gmp is installed;
-common on Linux).
+The resulting Go binaries link the static `libsqisign_lvl1*.a`
+archives directly. The build script also locates `libgmp.a` and bakes
+its absolute path into `sqisign.pc` (a bare `-lgmp` would make the
+linker prefer `libgmp.so`, which lives outside the runtime linker's
+default search path on NetBSD pkgsrc / MacPorts), so the binaries
+have **no** runtime gmp dependency either. The gmp install on the
+build host must therefore ship the static archive — pkgsrc, MacPorts,
+and Debian's `libgmp-dev` all do.
 
 **SQIsign-I sizes**: public key 65 bytes, secret key 353 bytes,
 **signature 148 bytes** — smaller than every other DNSSEC signature
@@ -156,7 +180,13 @@ in `build-qruov.sh` and updating the byte constants in `qruovc.go`.
 Build-host requirements: a C11 compiler and OpenSSL development headers
 + library (`port install openssl` on MacPorts, `pkgin install openssl`
 on pkgsrc, `apt install libssl-dev` on Debian/Ubuntu). The reference's
-MGF/PRG and its NIST KAT DRBG depend on libcrypto.
+MGF/PRG and its NIST KAT DRBG depend on libcrypto. The build script
+locates `libcrypto.a` (pkg-config's libdir first, then well-known
+prefixes) and bakes its absolute path into `qruov.pc`, so the
+resulting Go binaries have **no** runtime libcrypto dependency; it
+falls back to dynamic `-lcrypto` only when no static archive exists
+(in which case NetBSD/macOS binaries may need `LD_LIBRARY_PATH` at
+runtime — install an OpenSSL that ships the `.a` instead).
 
 After the build is installed, source the matching env script in the
 same shell session you build from:
