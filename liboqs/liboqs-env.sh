@@ -24,7 +24,13 @@
 # Idempotent — safe to source multiple times.
 
 # Locate the directory holding this script (works when sourced too).
-__libqs_env_self=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)
+# NOTE: ${BASH_SOURCE:-$0}, NOT ${BASH_SOURCE[0]:-$0}. The bracketed array form
+# is a bash-only syntax and a hard parse error ("Bad substitution") in a POSIX
+# shell -- which kills the script before the /bin/sh fallback below can run,
+# despite the #!/bin/sh shebang and despite this file being meant to be sourced
+# from whatever shell the operator happens to use. Bare $BASH_SOURCE already
+# means element 0 in bash, and is simply unset elsewhere.
+__libqs_env_self=$(cd "$(dirname "${BASH_SOURCE:-$0}")" 2>/dev/null && pwd)
 if [ -z "$__libqs_env_self" ]; then
    # Fallback for /bin/sh which may not support BASH_SOURCE: caller
    # must have $0 resolvable, or cwd must be the liboqs/ directory.
