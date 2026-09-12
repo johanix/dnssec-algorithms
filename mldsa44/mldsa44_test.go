@@ -13,7 +13,7 @@ import (
 
 // Number is the codepoint the tests use. Out-of-tree consumers pick
 // their own; we just need a consistent value across the test file.
-const Number uint8 = 199
+const Number uint8 = 18
 
 // Register the algorithm at test-binary init time. Each subpackage's
 // test file does this so the tests can exercise the full
@@ -48,7 +48,7 @@ func TestPrivateKeyRoundTrip(t *testing.T) {
 	}
 
 	s := keyrr.PrivateKeyString(sk)
-	if !strings.Contains(s, "Algorithm: 199 (MLDSA44)") {
+	if !strings.Contains(s, "Algorithm: 18 (MLDSA44)") {
 		t.Errorf("PrivateKeyString missing algorithm line:\n%s", s)
 	}
 	if !strings.Contains(s, "PrivateKey:") {

@@ -45,7 +45,7 @@ var algorithms = []struct {
 	name string
 	impl dns.Algorithm
 }{
-	{199, "MLDSA44", mldsa44.New()},
+	{18, "MLDSA44", mldsa44.New()}, // IANA-assigned; the rest below are private picks
 	{200, "SLHDSA128S", slhdsa128s.New()},
 	{201, "FALCON512", falcon512.New()},
 	{202, "MAYO1", mayo1.New()},

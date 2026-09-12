@@ -14,7 +14,7 @@ registration API — provided by the `johanix/dns` fork (pinned via a
 
 | Subpackage | Algorithm | Demo codepoint | Standardization | Backend | Build dep |
 |---|---|---|---|---|---|
-| `mldsa44/` | ML-DSA-44 (FIPS 204) | 199 (Unassigned) | final | CIRCL, pure Go | none |
+| `mldsa44/` | ML-DSA-44 (FIPS 204) | 18 (IANA) | final | CIRCL, pure Go | none |
 | `mldsa65/` | ML-DSA-65 (FIPS 204) | 212 (Unassigned) | final | CIRCL, pure Go | none |
 | `mldsa87/` | ML-DSA-87 (FIPS 204) | 213 (Unassigned) | final | CIRCL, pure Go | none |
 | `slhdsa128s/` | SLH-DSA-SHA2-128s (FIPS 205) | 200 (Unassigned) | final | CIRCL, pure Go | none |
@@ -62,7 +62,7 @@ Pure-Go algorithms need no setup — blank-import and `go build`:
 ```go
 import (
     "github.com/miekg/dns"
-    _ "github.com/johanix/dnssec-algorithms/mldsa44"    // codepoint 199
+    _ "github.com/johanix/dnssec-algorithms/mldsa44"    // codepoint 18 (IANA)
     _ "github.com/johanix/dnssec-algorithms/slhdsa128s" // codepoint 200
 )
 ```

@@ -67,7 +67,14 @@ const base = "github.com/johanix/dnssec-algorithms/"
 // codepoint and name) to introduce an algorithm; the generator and every
 // app's metadata pick it up.
 var Algorithms = []Alg{
-	{199, "MLDSA44", kskOnly, base + "mldsa44", PureGo},
+	// ML-DSA-44 is the one algorithm here with a real IANA codepoint:
+	// 18, assigned per draft-westerbaan-dnssec-mldsa. It was 199 while the
+	// registry entry was still Unassigned; 199 is retired rather than kept
+	// as an alias, so a zone signed under the old number stops validating
+	// and has to be re-signed. Everything below is still a private pick
+	// from the Unassigned range -- IANA has 19-22 unassigned, so the other
+	// ML-DSA sizes have no number to move to yet.
+	{18, "MLDSA44", kskOnly, base + "mldsa44", PureGo},
 	{200, "MLDSA65", kskOnly, base + "mldsa65", PureGo},
 	{201, "MLDSA87", kskOnly, base + "mldsa87", PureGo},
 	{202, "SLHDSA128S", kskOnly, base + "slhdsa128s", PureGo}, // ~7.8 KB signature

@@ -10,12 +10,15 @@
 //	)
 //
 //	func init() {
-//	    dns.RegisterAlgorithm(199, mldsa44.New())
+//	    dns.RegisterAlgorithm(18, mldsa44.New())
 //	}
 //
-// IANA has not assigned a codepoint for ML-DSA in the DNS Security
-// Algorithm Numbers registry; 199 is a commonly-chosen value from
-// the Unassigned range but the application is free to pick another.
+// IANA has assigned codepoint 18 to ML-DSA-44 in the DNS Security
+// Algorithm Numbers registry, per draft-westerbaan-dnssec-mldsa. Use it.
+// Deployments that picked a number from the Unassigned range before the
+// assignment -- 199 was a common choice, and what this repo used -- should
+// migrate: the codepoint is part of the DS and the DNSKEY, so a zone signed
+// under the old number has to be re-signed, not merely re-registered.
 //
 // All [dns.Algorithm] interface methods are implemented on top of
 // github.com/cloudflare/circl/sign/mldsa/mldsa44.
