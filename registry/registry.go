@@ -74,7 +74,15 @@ var Algorithms = []Alg{
 	// and has to be re-signed. Everything below is still a private pick
 	// from the Unassigned range -- IANA has 19-22 unassigned, so the other
 	// ML-DSA sizes have no number to move to yet.
-	{18, "MLDSA44", kskOnly, base + "mldsa44", PureGo},
+	// ML-DSA-44 is ZSK-capable, with a caveat rather than a prohibition: a
+	// 2420-byte signature on every RRset is a lot of zone, so a KSK-only
+	// deployment is usually the right call. It was kskOnly here, which made
+	// the all-ML-DSA zone impossible to express at all -- and that zone is
+	// the only shape a validator implementing alg 18 can return AD for,
+	// since a mixed DNSKEY RRset demands an RRSIG per algorithm
+	// (RFC 4035 section 2.2). Advice belongs in the operator's policy, not
+	// in a capability that forecloses the test.
+	{18, "MLDSA44", dnssec, base + "mldsa44", PureGo},
 	{200, "MLDSA65", kskOnly, base + "mldsa65", PureGo},
 	{201, "MLDSA87", kskOnly, base + "mldsa87", PureGo},
 	{202, "SLHDSA128S", kskOnly, base + "slhdsa128s", PureGo}, // ~7.8 KB signature
