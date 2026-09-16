@@ -131,7 +131,13 @@ type Facts struct {
 // are included so listings can annotate the built-in algorithms too.
 var AlgorithmFacts = map[string]Facts{
 	// --- Classical (miekg/dns built-ins; RSA sizes shown for 2048-bit) ---
+	//
+	// ED448 is the exception: it is implemented here (ed448/), not by
+	// miekg/dns. It is a standard algorithm that consumers register in
+	// every binary rather than per app, so it is not a row of Algorithms,
+	// and a generator reading that table must not register it again.
 	"ED25519":         {PubKeyBytes: 32, SigBytes: 64, SecKeyBytes: 32, Maturity: "builtin", Description: "Edwards-curve DSA (RFC 8080); classical"},
+	"ED448":           {PubKeyBytes: 57, SigBytes: 114, SecKeyBytes: 57, Maturity: "builtin", Description: "Edwards-curve DSA (RFC 8080); classical"},
 	"ECDSAP256SHA256": {PubKeyBytes: 64, SigBytes: 64, SecKeyBytes: 32, Maturity: "builtin", Description: "ECDSA P-256 with SHA-256 (RFC 6605); classical, widely deployed"},
 	"ECDSAP384SHA384": {PubKeyBytes: 96, SigBytes: 96, SecKeyBytes: 48, Maturity: "builtin", Description: "ECDSA P-384 with SHA-384 (RFC 6605); classical"},
 	"RSASHA256":       {PubKeyBytes: 260, SigBytes: 256, SecKeyBytes: 1192, Maturity: "builtin", Description: "RSA with SHA-256 (RFC 5702); classical. Sizes for a 2048-bit key (variable)"},

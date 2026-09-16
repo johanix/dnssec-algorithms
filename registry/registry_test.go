@@ -49,7 +49,7 @@ func TestTableIntegrity(t *testing.T) {
 // registry algorithm or a known classical built-in (not a typo'd orphan).
 func TestFactsCoverage(t *testing.T) {
 	classical := map[string]bool{
-		"ED25519": true, "ECDSAP256SHA256": true, "ECDSAP384SHA384": true,
+		"ED25519": true, "ED448": true, "ECDSAP256SHA256": true, "ECDSAP384SHA384": true,
 		"RSASHA256": true, "RSASHA512": true,
 	}
 

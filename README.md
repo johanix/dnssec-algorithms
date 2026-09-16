@@ -14,6 +14,7 @@ registration API — provided by the `johanix/dns` fork (pinned via a
 
 | Subpackage | Algorithm | Demo codepoint | Standardization | Backend | Build dep |
 |---|---|---|---|---|---|
+| `ed448/` | Ed448 (RFC 8080) | 16 (IANA) | final | CIRCL, pure Go | none |
 | `mldsa44/` | ML-DSA-44 (FIPS 204) | 18 (IANA) | final | CIRCL, pure Go | none |
 | `mldsa65/` | ML-DSA-65 (FIPS 204) | 212 (Unassigned) | final | CIRCL, pure Go | none |
 | `mldsa87/` | ML-DSA-87 (FIPS 204) | 213 (Unassigned) | final | CIRCL, pure Go | none |
@@ -47,7 +48,15 @@ family-ordered and does **not** match the demo column above — when in
 doubt about what a deployed system uses, the registry is the source
 of truth.
 
-The ML-DSA family (`mldsa44/65/87`) and `slhdsa128s` are pure Go
+`ed448/` is the one classical algorithm here: miekg/dns names ED448
+but does not implement it. It is not a row of the registry table,
+because it is a standard algorithm that consumers register in every
+binary (tdns does so in `v2/algorithms`), not per app; its facts sit
+with the classical entries in `AlgorithmFacts`. Its tests check it
+against BIND 9, OpenSSL 3 and NLnet Labs' domain library
+(`ed448/testdata/`).
+
+The ML-DSA family (`mldsa44/65/87`), `slhdsa128s` and `ed448` are pure Go
 (CIRCL) — no system deps. The rest are CGO wrappers over three C
 codebases: **liboqs** (Falcon-512, Falcon-1024, MAYO-1, MAYO-2,
 MAYO-3, MAYO-5, SNOVA-24_5_4, SNOVA-37_17_2, SNOVA-25_8_3, CROSS
