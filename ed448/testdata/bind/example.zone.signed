@@ -1,0 +1,84 @@
+; File written on Wed Sep 16 12:56:55 2026
+; dnssec-signzone version 9.20.20
+example.		3600	IN SOA	ns.example. hostmaster.example. (
+					1          ; serial
+					7200       ; refresh (2 hours)
+					1800       ; retry (30 minutes)
+					604800     ; expire (1 week)
+					3600       ; minimum (1 hour)
+					)
+			3600	RRSIG	SOA 16 1 3600 (
+					20360101000000 20260101000000 4850 example.
+					E5Pv3UDOj5p9854Gp0UIUrR1MrEJKg3wxM+N
+					noAmiwqXdisGetvUJzaTj7hA1y/QamJQipsZ
+					P+CACxdOW9R7JvRkYgNzJdXKxM+lmp2VmxQy
+					NWQJRhYTAtD95NpyXANbFQejQGq8Hby8PWjb
+					wMHT9SMA )
+			3600	NS	ns.example.
+			3600	RRSIG	NS 16 1 3600 (
+					20360101000000 20260101000000 4850 example.
+					gdDBoKLrx7nHCf3g1gGvzitXFi27NmpNFfU2
+					K5/26Dp9tuitvGW+3boct5iSD/6VA2z+XRvN
+					+liARsTW+gyjWWCrs0fukiKEsd/Fwo5/hFtZ
+					MDxynPHkHP6RSRdnfFPVDw3wWD3huz1+GW3/
+					ROT9cTQA )
+			3600	MX	10 mail.example.
+			3600	RRSIG	MX 16 1 3600 (
+					20360101000000 20260101000000 4850 example.
+					DlQUNUXmoeZcZWbSL5yRe7wQnwk6eBUXX0PH
+					u+ijutbvU5R608QD/T8HYSJ1QO1Ft7JyYlFP
+					fP6AAzKU4s05ChN1URFaAUvzU2mPzsrL3lW1
+					Z+W5jKwWk6mN3c6dj5jGN8m9SVvjOU9gGYWm
+					6nL20ycA )
+			3600	NSEC	mail.example. NS SOA MX RRSIG NSEC DNSKEY
+			3600	RRSIG	NSEC 16 1 3600 (
+					20360101000000 20260101000000 4850 example.
+					sWHTXUQ/ld5RQ1kmtieTKbbiL8LCmARtS5Z3
+					F2BL8dNjJmRt6hwh3yjvM6AyrfBE/D/qZQkM
+					lkwAuGhmJ1mcDulYjWmrO+Tms83/OEnEytPL
+					OnDnhnMFkS6KUwlKqS6r0CZcgyyDLQQzCk8Z
+					wIu4xwQA )
+			3600	DNSKEY	256 3 16 (
+					VeTVwf09Lker2+GGOaqzxDa2Jgkbqwk5ZE9J
+					Ano/8Telh05Ep8TBaVZ6JrgrJC9G+oRF+0Bu
+					bPKA
+					) ; ZSK; alg = ED448 ; key id = 4850
+			3600	RRSIG	DNSKEY 16 1 3600 (
+					20360101000000 20260101000000 4850 example.
+					vdm9KMkjQw+q2BFL/e+hEo/UnM0NpwlNgUPX
+					mG5nQYh3o7dKGHiNwwX65pNI910KjMf3OgAW
+					xQAAmNUHbzlNXsmCXfr7pRQWA9BMBe9R662H
+					6pcxyvK0QdxK/G8m+UDedIAWLhLYK2si5dPY
+					1LZ7cTgA )
+mail.example.		3600	IN A	192.0.2.2
+			3600	RRSIG	A 16 2 3600 (
+					20360101000000 20260101000000 4850 example.
+					XijZoE0BM/C9inu0Gy47ViNRrpr4jroynE/L
+					uA7iQtpCiAp3qRJC+q23ePoQOFiMnBHyNCDf
+					80OAJh5YRHmfzlHmKtPXwCcYACHbPOrpcJOW
+					AX7PeNFh+HgO/wDFqr8Ph4OQrjx98KYhw+9v
+					jUP7zDAA )
+			3600	NSEC	ns.example. A RRSIG NSEC
+			3600	RRSIG	NSEC 16 2 3600 (
+					20360101000000 20260101000000 4850 example.
+					Q7sVqHVjjmw/cisK7JY7VkVu/XlBvDDu9NZj
+					Xyyb8DDPnAoz8zr/ziGuYPaa5aXvDY+wDh0S
+					MN0AH3FgEJ4jpDOjQCfpvU6dD/su2fBsB9o5
+					EArz7L/jw2OSBXD+1cD++xhbRCqItvXb2VHt
+					b+E1fQIA )
+ns.example.		3600	IN A	192.0.2.1
+			3600	RRSIG	A 16 2 3600 (
+					20360101000000 20260101000000 4850 example.
+					6hD2/lhMp/TZNzq3ZzaFZqmZD2G+FE1LF/sE
+					yqtbLEQxPX5duWqEQoyv1tnvWwwwbsjWNtz+
+					KECACyHIhVUL2thEbTbHkqzOB8WiMhvMo9WS
+					cLsPCsCBLh7PVNGU4Yy3evcd87nYnpG9i/Mx
+					had1tSwA )
+			3600	NSEC	example. A RRSIG NSEC
+			3600	RRSIG	NSEC 16 2 3600 (
+					20360101000000 20260101000000 4850 example.
+					9PjzDycR+So4R+OYf/2aat4W+pJcgZLdSDAj
+					FmOTskc42joYz0SpAdBsoH/j5/2ggO0uwoaB
+					Hs+Akp1qxTwuvKs47UJi8e3MzU7ubCJpRP+I
+					CFAapWEFP/QwMWTEAYB44B6QerFr5sOcxHjB
+					OpyaghEA )
