@@ -193,6 +193,26 @@ func TestDomainKeyFile(t *testing.T) {
 	}
 }
 
+// RFC 8080 uses pure Ed448 with an empty context. A signature made with a
+// context, or with Ed448ph, must not verify; the BIND fixture proves the
+// positive case, this keeps the rule from being dropped silently.
+func TestVerifyRequiresEmptyContext(t *testing.T) {
+	pub, priv, err := ed448.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg := []byte("rfc 8080")
+	if err := New().Verify(pub, msg, ed448.Sign(priv, msg, "")); err != nil {
+		t.Fatalf("pure Ed448, empty context: %v", err)
+	}
+	if err := New().Verify(pub, msg, ed448.Sign(priv, msg, "dns")); err != dns.ErrSig {
+		t.Errorf("a signature with a context verified (err = %v)", err)
+	}
+	if err := New().Verify(pub, msg, ed448.SignPh(priv, msg, "")); err != dns.ErrSig {
+		t.Errorf("an Ed448ph signature verified (err = %v)", err)
+	}
+}
+
 func TestReadPrivateKeyRejectsWrongSize(t *testing.T) {
 	short := base64.StdEncoding.EncodeToString(make([]byte, ed448.SeedSize-1))
 	if _, err := New().ReadPrivateKey(map[string]string{"privatekey": short}); err != dns.ErrPrivKey {

@@ -46,7 +46,9 @@ func TestTableIntegrity(t *testing.T) {
 // TestFactsCoverage guards that AlgorithmFacts (external, name-keyed
 // static facts) stays in step with the Algorithms decisions table: every
 // registry algorithm has a facts entry, and every facts entry is either a
-// registry algorithm or a known classical built-in (not a typo'd orphan).
+// registry algorithm or a known classical algorithm (not a typo'd orphan).
+// The classical ones are the miekg/dns built-ins plus ED448, which this
+// module implements (ed448/) but keeps out of the Algorithms table.
 func TestFactsCoverage(t *testing.T) {
 	classical := map[string]bool{
 		"ED25519": true, "ED448": true, "ECDSAP256SHA256": true, "ECDSAP384SHA384": true,
