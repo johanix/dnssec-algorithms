@@ -28,7 +28,6 @@ import (
 	"github.com/johanix/dnssec-algorithms/mayo2"
 	"github.com/johanix/dnssec-algorithms/mayo3"
 	"github.com/johanix/dnssec-algorithms/mayo5"
-	"github.com/johanix/dnssec-algorithms/mldsa44"
 	"github.com/johanix/dnssec-algorithms/qruov_q31_l3"
 	"github.com/johanix/dnssec-algorithms/slhdsa128s"
 	"github.com/johanix/dnssec-algorithms/snova24_5_4"
@@ -45,7 +44,6 @@ var algorithms = []struct {
 	name string
 	impl dns.Algorithm
 }{
-	{18, "MLDSA44", mldsa44.New()}, // IANA-assigned; the rest below are private picks
 	{200, "SLHDSA128S", slhdsa128s.New()},
 	{201, "FALCON512", falcon512.New()},
 	{202, "MAYO1", mayo1.New()},

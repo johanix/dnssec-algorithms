@@ -51,7 +51,8 @@ Sizes above are NIST level-1 unless noted; taken from liboqs 0.15.0 headers.
 
 ## Implemented in this repo
 
-- **Lattice:** `mldsa44/65/87` (pure Go), `falcon512/1024` (liboqs).
+- **Lattice:** `mldsa65/87` (pure Go), `falcon512/1024` (liboqs). ML-DSA-44
+  moved into tdns once IANA assigned it codepoint 18.
 - **Hash-based:** `slhdsa128s` (pure Go).
 - **Multivariate:** `mayo1/2/3/5`, `snova24_5_4/25_8_3/37_17_2` (liboqs), `qruov_q31_l3` (own C lib).
 - **Isogeny:** `sqisign1` (own C lib).
