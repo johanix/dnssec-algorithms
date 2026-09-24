@@ -43,18 +43,20 @@ func TestTableIntegrity(t *testing.T) {
 	}
 }
 
+// noRow are the algorithms with facts but no row in Algorithms: the
+// miekg/dns built-ins; ED448, which this module implements (ed448/) and
+// consumers register in every binary; and ML-DSA-44, which tdns implements
+// and registers itself (johanix/tdns#760).
+var noRow = map[string]bool{
+	"ED25519": true, "ED448": true, "ECDSAP256SHA256": true, "ECDSAP384SHA384": true,
+	"RSASHA256": true, "RSASHA512": true, "MLDSA44": true,
+}
+
 // TestFactsCoverage guards that AlgorithmFacts (external, name-keyed
 // static facts) stays in step with the Algorithms decisions table: every
 // registry algorithm has a facts entry, and every facts entry is either a
-// registry algorithm or a known classical algorithm (not a typo'd orphan).
-// The classical ones are the miekg/dns built-ins plus ED448, which this
-// module implements (ed448/) but keeps out of the Algorithms table.
+// registry algorithm or one of noRow (not a typo'd orphan).
 func TestFactsCoverage(t *testing.T) {
-	classical := map[string]bool{
-		"ED25519": true, "ED448": true, "ECDSAP256SHA256": true, "ECDSAP384SHA384": true,
-		"RSASHA256": true, "RSASHA512": true,
-	}
-
 	inRegistry := map[string]bool{}
 	for _, a := range Algorithms {
 		inRegistry[a.Name] = true
@@ -64,12 +66,22 @@ func TestFactsCoverage(t *testing.T) {
 	}
 
 	for name, f := range AlgorithmFacts {
-		if !inRegistry[name] && !classical[name] {
-			t.Errorf("AlgorithmFacts[%q]: not a registry algorithm and not a known classical built-in (typo?)", name)
+		if !inRegistry[name] && !noRow[name] {
+			t.Errorf("AlgorithmFacts[%q]: not a registry algorithm and not one of the algorithms kept out of it (typo?)", name)
 		}
 		// Sizes are spec-fixed and non-zero for every real algorithm.
 		if f.PubKeyBytes <= 0 || f.SigBytes <= 0 {
 			t.Errorf("AlgorithmFacts[%q]: PubKeyBytes/SigBytes must be > 0 (got %d/%d)", name, f.PubKeyBytes, f.SigBytes)
+		}
+	}
+}
+
+// An algorithm that its consumers register in every binary must not come
+// back as a row: a generator would then register it a second time.
+func TestAlwaysRegisteredAlgorithmsHaveNoRow(t *testing.T) {
+	for _, a := range Algorithms {
+		if a.Name == "ED448" || a.Name == "MLDSA44" || a.Codepoint == 16 || a.Codepoint == 18 {
+			t.Errorf("%s (codepoint %d) is registered in every binary and must not be a row", a.Name, a.Codepoint)
 		}
 	}
 }

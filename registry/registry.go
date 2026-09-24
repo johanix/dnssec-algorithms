@@ -67,22 +67,13 @@ const base = "github.com/johanix/dnssec-algorithms/"
 // codepoint and name) to introduce an algorithm; the generator and every
 // app's metadata pick it up.
 var Algorithms = []Alg{
-	// ML-DSA-44 is the one algorithm here with a real IANA codepoint:
-	// 18, assigned per draft-westerbaan-dnssec-mldsa. It was 199 while the
-	// registry entry was still Unassigned; 199 is retired rather than kept
-	// as an alias, so a zone signed under the old number stops validating
-	// and has to be re-signed. Everything below is still a private pick
-	// from the Unassigned range -- IANA has 19-22 unassigned, so the other
-	// ML-DSA sizes have no number to move to yet.
-	// ML-DSA-44 is ZSK-capable, with a caveat rather than a prohibition: a
-	// 2420-byte signature on every RRset is a lot of zone, so a KSK-only
-	// deployment is usually the right call. It was kskOnly here, which made
-	// the all-ML-DSA zone impossible to express at all -- and that zone is
-	// the only shape a validator implementing alg 18 can return AD for,
-	// since a mixed DNSKEY RRset demands an RRSIG per algorithm
-	// (RFC 4035 section 2.2). Advice belongs in the operator's policy, not
-	// in a capability that forecloses the test.
-	{18, "MLDSA44", dnssec, base + "mldsa44", PureGo},
+	// ML-DSA-44 is not a row. It has its IANA codepoint, 18
+	// (draft-westerbaan-dnssec-mldsa), and tdns implements it and registers
+	// it in every binary (johanix/tdns#760), so a generator reading this
+	// table must not register it again. Its facts stay in AlgorithmFacts.
+	// Every row is a private pick from the Unassigned range -- IANA has
+	// 19-22 unassigned, so the other ML-DSA sizes have no number to move
+	// to yet.
 	{200, "MLDSA65", kskOnly, base + "mldsa65", PureGo},
 	{201, "MLDSA87", kskOnly, base + "mldsa87", PureGo},
 	{202, "SLHDSA128S", kskOnly, base + "slhdsa128s", PureGo}, // ~7.8 KB signature
@@ -144,6 +135,10 @@ var AlgorithmFacts = map[string]Facts{
 	"RSASHA512":       {PubKeyBytes: 260, SigBytes: 256, SecKeyBytes: 1192, Maturity: "builtin", Description: "RSA with SHA-512 (RFC 5702); classical. Sizes for a 2048-bit key (variable)"},
 
 	// --- Lattice ---
+	//
+	// MLDSA44 has no row in Algorithms either: tdns implements and
+	// registers it (johanix/tdns#760). Its facts stay for listings and for
+	// tools that size zones by algorithm.
 	"MLDSA44":    {PubKeyBytes: 1312, SigBytes: 2420, SecKeyBytes: 2560, SecurityLevel: 2, Maturity: "final", Description: "ML-DSA-44 (FIPS 204), lattice"},
 	"MLDSA65":    {PubKeyBytes: 1952, SigBytes: 3309, SecKeyBytes: 4032, SecurityLevel: 3, Maturity: "final", Description: "ML-DSA-65 (FIPS 204), lattice; level-3 parameter set"},
 	"MLDSA87":    {PubKeyBytes: 2592, SigBytes: 4627, SecKeyBytes: 4896, SecurityLevel: 5, Maturity: "final", Description: "ML-DSA-87 (FIPS 204), lattice; level-5 parameter set"},

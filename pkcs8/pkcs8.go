@@ -19,7 +19,7 @@
 // The package is dependency-free (stdlib only). Importing it does not
 // pull in any specific algorithm or its crypto backend; that happens
 // only when a consumer blank-imports an algorithm subpackage such as
-// github.com/johanix/dnssec-algorithms/mldsa44.
+// github.com/johanix/dnssec-algorithms/mldsa65.
 package pkcs8
 
 import (

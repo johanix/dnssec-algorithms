@@ -1,6 +1,6 @@
 # Building the CGO-backed algorithms
 
-The pure-Go algorithms (`mldsa44`, `mldsa65`, `mldsa87`, `slhdsa128s`)
+The pure-Go algorithms (`mldsa65`, `mldsa87`, `slhdsa128s`, `ed448`)
 need nothing — they compile with a plain `go build`. The remaining
 algorithms link C libraries via CGO and need a one-time per-host
 setup, plus an env script sourced into the shell session you build

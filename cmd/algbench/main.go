@@ -54,7 +54,6 @@ import (
 	"github.com/johanix/dnssec-algorithms/mayo2"
 	"github.com/johanix/dnssec-algorithms/mayo3"
 	"github.com/johanix/dnssec-algorithms/mayo5"
-	"github.com/johanix/dnssec-algorithms/mldsa44"
 	"github.com/johanix/dnssec-algorithms/mldsa65"
 	"github.com/johanix/dnssec-algorithms/mldsa87"
 	"github.com/johanix/dnssec-algorithms/qruov_q31_l3"
@@ -73,7 +72,6 @@ import (
 // one is a hard error at startup, so this can never silently drift from
 // the registry the way the old hardcoded list did.
 var impls = map[string]func() dns.Algorithm{
-	"MLDSA44":            func() dns.Algorithm { return mldsa44.New() },
 	"MLDSA65":            func() dns.Algorithm { return mldsa65.New() },
 	"MLDSA87":            func() dns.Algorithm { return mldsa87.New() },
 	"SLHDSA128S":         func() dns.Algorithm { return slhdsa128s.New() },
@@ -323,9 +321,9 @@ type cost struct {
 //
 //	costs:
 //	   arm64:
-//	      MLDSA44: { signing: 3.1, validation: 1.9 }
+//	      MLDSA65: { signing: 3.1, validation: 1.9 }
 //	   amd64:
-//	      MLDSA44: { signing: 2.8, validation: 1.7 }
+//	      MLDSA65: { signing: 2.8, validation: 1.7 }
 type costsFile struct {
 	Costs map[string]map[string]cost `yaml:"costs"`
 }
@@ -363,6 +361,12 @@ func printCostsYAML(arch string, results []result, refSign, refVerify float64) {
 // writeCostsFile merges this run's costs into path under the arch block,
 // preserving cost blocks for other architectures already in the file. The
 // file is created if absent.
+//
+// Within the arch block, every algorithm this run attempted is replaced by
+// its new measurement, or dropped if it was skipped. A row for an algorithm
+// the run did not attempt at all stays as it was: ML-DSA-44 moved into tdns
+// and is no longer benchmarked here, and its last measurement is still what
+// the cost data should say.
 func writeCostsFile(path, arch string, results []result, refSign, refVerify float64) error {
 	var cf costsFile
 	if data, err := os.ReadFile(path); err == nil {
@@ -375,7 +379,17 @@ func writeCostsFile(path, arch string, results []result, refSign, refVerify floa
 	if cf.Costs == nil {
 		cf.Costs = map[string]map[string]cost{}
 	}
-	cf.Costs[arch] = measuredCosts(results, refSign, refVerify)
+	block := measuredCosts(results, refSign, refVerify)
+	attempted := map[string]bool{}
+	for _, r := range results {
+		attempted[r.name] = true
+	}
+	for name, c := range cf.Costs[arch] {
+		if !attempted[name] {
+			block[name] = c
+		}
+	}
+	cf.Costs[arch] = block
 
 	out, err := yaml.Marshal(cf)
 	if err != nil {

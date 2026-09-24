@@ -15,7 +15,6 @@ registration API — provided by the `johanix/dns` fork (pinned via a
 | Subpackage | Algorithm | Demo codepoint | Standardization | Backend | Build dep |
 |---|---|---|---|---|---|
 | `ed448/` | Ed448 (RFC 8080) | 16 (IANA) | final | CIRCL, pure Go | none |
-| `mldsa44/` | ML-DSA-44 (FIPS 204) | 18 (IANA) | final | CIRCL, pure Go | none |
 | `mldsa65/` | ML-DSA-65 (FIPS 204) | 212 (Unassigned) | final | CIRCL, pure Go | none |
 | `mldsa87/` | ML-DSA-87 (FIPS 204) | 213 (Unassigned) | final | CIRCL, pure Go | none |
 | `slhdsa128s/` | SLH-DSA-SHA2-128s (FIPS 205) | 200 (Unassigned) | final | CIRCL, pure Go | none |
@@ -56,7 +55,12 @@ with the classical entries in `AlgorithmFacts`. Its tests check it
 against BIND 9, OpenSSL 3 and NLnet Labs' domain library
 (`ed448/testdata/`).
 
-The ML-DSA family (`mldsa44/65/87`), `slhdsa128s` and `ed448` are pure Go
+ML-DSA-44 (FIPS 204) is no longer here. It has its IANA codepoint, 18,
+and lives in tdns (`github.com/johanix/tdns/v2/algorithms/mldsa44`),
+which registers it in every binary. Its facts stay in `AlgorithmFacts`,
+and its last measured costs stay in `algorithm-costs.yaml`.
+
+The ML-DSA sizes here (`mldsa65/87`), `slhdsa128s` and `ed448` are pure Go
 (CIRCL) — no system deps. The rest are CGO wrappers over three C
 codebases: **liboqs** (Falcon-512, Falcon-1024, MAYO-1, MAYO-2,
 MAYO-3, MAYO-5, SNOVA-24_5_4, SNOVA-37_17_2, SNOVA-25_8_3, CROSS
@@ -71,7 +75,7 @@ Pure-Go algorithms need no setup — blank-import and `go build`:
 ```go
 import (
     "github.com/miekg/dns"
-    _ "github.com/johanix/dnssec-algorithms/mldsa44"    // codepoint 18 (IANA)
+    _ "github.com/johanix/dnssec-algorithms/mldsa65"    // codepoint 212
     _ "github.com/johanix/dnssec-algorithms/slhdsa128s" // codepoint 200
 )
 ```
