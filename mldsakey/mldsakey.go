@@ -17,10 +17,10 @@
 // sizes). The module uses IMPLICIT TAGS, so the seed arm is encoded
 // as 0x80 0x20 followed by the 32 seed bytes.
 //
-// The seed is the only form other formats can carry: a JWK for ML-DSA
-// holds the seed as "priv", and the seed cannot be recovered from the
-// expanded key. Writers should therefore use [MarshalSeed] whenever
-// they still have the seed.
+// Some formats carry only the seed (a JWK for ML-DSA holds it as
+// "priv"), and the seed cannot be recovered from the expanded key.
+// Writers should therefore use [MarshalSeed] whenever they still have
+// the seed.
 //
 // Earlier tdns and dnssec-algorithms releases wrote a pre-RFC layout:
 // the raw expanded key directly in the privateKey OCTET STRING, with
@@ -32,9 +32,10 @@
 // pick the CHOICE arm by tag, not length; [Parse] does that for every
 // blob that is not legacy-sized.
 //
-// The package is stdlib only. It does not expand seeds: that needs the
-// ML-DSA implementation, which the algorithm packages own. They also
-// own the consistency check of the both arm.
+// The package needs only the standard library and this module's pkcs8
+// package. It does not expand seeds: that needs the ML-DSA
+// implementation, which the algorithm packages own. They also own the
+// consistency check of the both arm.
 package mldsakey
 
 import (
