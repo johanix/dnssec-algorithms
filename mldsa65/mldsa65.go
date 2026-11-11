@@ -48,10 +48,13 @@ func (*Impl) Generate(bits int) (crypto.PrivateKey, error) {
 	if bits != 0 {
 		return nil, dns.ErrKeySize
 	}
-	_, priv, err := mldsa65.GenerateKey(rand.Reader)
-	if err != nil {
+	// Generate from an explicit seed: the key keeps it (Seed()), and
+	// the PKCS#8 codec stores the seed rather than the expanded key.
+	var seed [mldsa65.SeedSize]byte
+	if _, err := rand.Read(seed[:]); err != nil {
 		return nil, err
 	}
+	_, priv := mldsa65.NewKeyFromSeed(&seed)
 	return priv, nil
 }
 
